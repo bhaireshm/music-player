@@ -1,0 +1,257 @@
+import { getIdToken } from './firebase';
+
+// Get API base URL from environment variable
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+/**
+ * Error response structure from backend
+ */
+interface ErrorResponse {
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+}
+
+/**
+ * Song object structure
+ */
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  mimeType: string;
+  createdAt: string;
+}
+
+/**
+ * Playlist object structure
+ */
+export interface Playlist {
+  id: string;
+  name: string;
+  userId: string;
+  songIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Custom API error class
+ */
+export class ApiError extends Error {
+  code: string;
+  details?: unknown;
+
+  constructor(code: string, message: string, details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+/**
+ * Make an authenticated API request
+ */
+async function makeAuthenticatedRequest(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  // Get the current user's ID token
+  const token = await getIdToken();
+
+  if (!token) {
+    throw new ApiError('AUTH_TOKEN_MISSING', 'User is not authenticated');
+  }
+
+  // Add authorization header
+  const headers = {
+    ...options.headers,
+    Authorization: `Bearer ${token}`,
+  };
+
+  // Make the request
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  return response;
+}
+
+/**
+ * Parse API response and handle errors
+ */
+async function parseResponse<T>(response: Response): Promise<T> {
+  // Check if response is ok
+  if (!response.ok) {
+    // Try to parse error response
+    try {
+      const errorData: ErrorResponse = await response.json();
+      throw new ApiError(
+        errorData.error.code,
+        errorData.error.message,
+        errorData.error.details
+      );
+    } catch (error) {
+      // If parsing fails, throw generic error
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        'UNKNOWN_ERROR',
+        `Request failed with status ${response.status}`
+      );
+    }
+  }
+
+  // Parse successful response
+  return response.json();
+}
+
+/**
+ * Upload a song to the backend
+ */
+export async function uploadSong(
+  file: File,
+  title: string,
+  artist: string,
+  onProgress?: (progress: number) => void
+): Promise<Song> {
+  const token = await getIdToken();
+
+  if (!token) {
+    throw new ApiError('AUTH_TOKEN_MISSING', 'User is not authenticated');
+  }
+
+  // Create form data
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', title);
+  formData.append('artist', artist);
+
+  // Use XMLHttpRequest for progress tracking
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Track upload progress
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100;
+          onProgress(progress);
+        }
+      });
+    }
+
+    // Handle completion
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data.song);
+        } catch {
+          reject(new ApiError('PARSE_ERROR', 'Failed to parse response'));
+        }
+      } else {
+        try {
+          const errorData: ErrorResponse = JSON.parse(xhr.responseText);
+          reject(
+            new ApiError(
+              errorData.error.code,
+              errorData.error.message,
+              errorData.error.details
+            )
+          );
+        } catch {
+          reject(
+            new ApiError(
+              'UNKNOWN_ERROR',
+              `Request failed with status ${xhr.status}`
+            )
+          );
+        }
+      }
+    });
+
+    // Handle errors
+    xhr.addEventListener('error', () => {
+      reject(new ApiError('NETWORK_ERROR', 'Network request failed'));
+    });
+
+    // Open and send request
+    xhr.open('POST', `${API_BASE_URL}/songs/upload`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Get the streaming URL for a song
+ */
+export function getSongStreamUrl(songId: string): string {
+  return `${API_BASE_URL}/songs/${songId}`;
+}
+
+/**
+ * Get all songs (library)
+ */
+export async function getSongs(): Promise<Song[]> {
+  const response = await makeAuthenticatedRequest('/songs');
+  const data = await parseResponse<{ songs: Song[] }>(response);
+  return data.songs;
+}
+
+/**
+ * Get all playlists for the current user
+ */
+export async function getPlaylists(): Promise<Playlist[]> {
+  const response = await makeAuthenticatedRequest('/playlists');
+  const data = await parseResponse<{ playlists: Playlist[] }>(response);
+  return data.playlists;
+}
+
+/**
+ * Create a new playlist
+ */
+export async function createPlaylist(name: string): Promise<Playlist> {
+  const response = await makeAuthenticatedRequest('/playlists', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+  const data = await parseResponse<{ playlist: Playlist }>(response);
+  return data.playlist;
+}
+
+/**
+ * Update a playlist's songs
+ */
+export async function updatePlaylist(
+  playlistId: string,
+  songIds: string[]
+): Promise<Playlist> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ songIds }),
+  });
+  const data = await parseResponse<{ playlist: Playlist }>(response);
+  return data.playlist;
+}
+
+/**
+ * Delete a playlist
+ */
+export async function deletePlaylist(playlistId: string): Promise<void> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}`, {
+    method: 'DELETE',
+  });
+  await parseResponse<{ success: boolean }>(response);
+}

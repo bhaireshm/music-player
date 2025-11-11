@@ -111,7 +111,7 @@
   - Return created song object
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 8. Implement song streaming endpoint
+- [x] 8. Implement song streaming endpoint
 
   - Create GET /songs/:id route with authentication middleware
   - Fetch song metadata from database by ID
@@ -176,22 +176,24 @@
 
 ## Frontend Implementation
 
-- [ ] 12. Initialize frontend project structure
+- [x] 12. Initialize frontend project structure
 
   - Create Next.js project with TypeScript and Tailwind CSS
   - Install Firebase SDK and other dependencies
   - Configure Tailwind CSS
   - Create folder structure: app/, components/, lib/, hooks/
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
+-
 
-- [ ] 13. Configure Firebase Authentication
+- [x] 13. Configure Firebase Authentication
 
   - Create firebase.ts with Firebase SDK initialization
   - Configure Firebase project credentials from environment variables
   - Export auth instance and helper functions
   - _Requirements: 1.1, 1.2_
 
-- [ ] 14. Implement API client module
+- [x] 14. Implement API client module
+
 
   - Create api.ts with HTTP client functions
   - Implement getIdToken() to retrieve current user's Firebase token
@@ -208,6 +210,7 @@
   - _Requirements: 1.1, 1.2_
 
 - [ ] 16. Build authentication pages
+
   - [ ] 16.1 Create login page
     - Build login form with email and password inputs
     - Integrate with useAuth() hook
