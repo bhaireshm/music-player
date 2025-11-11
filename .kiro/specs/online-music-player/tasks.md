@@ -56,25 +56,30 @@
 
 - [x] 4. Implement authentication middleware
 
-
-
-
   - Create auth.ts middleware to verify Firebase ID tokens
   - Extract token from Authorization header
   - Verify token using Firebase Admin SDK
   - Attach userId to request object on success
   - Return 401 error for missing or invalid tokens
   - _Requirements: 1.3, 1.4, 9.1, 9.2, 9.3, 9.4_
+-
 
-- [ ] 5. Implement fingerprint service
+- [x] 5. Implement fingerprint service
 
-  - [ ] 5.1 Create fingerprint generation function
+
+
+
+
+  - [x] 5.1 Create fingerprint generation function
+
     - Implement generateFingerprint() using child_process to execute fpcalc
     - Accept file buffer as input
     - Parse fpcalc output to extract fingerprint hash
     - Handle errors from fpcalc execution
     - _Requirements: 2.2, 8.1_
-  - [ ] 5.2 Create duplicate detection function
+  - [x] 5.2 Create duplicate detection function
+
+
     - Implement checkDuplicate() to query Song model by fingerprint
     - Return existing song document if found, null otherwise
     - _Requirements: 2.3, 8.2, 8.3_
