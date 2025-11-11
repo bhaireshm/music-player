@@ -66,10 +66,6 @@
 
 - [x] 5. Implement fingerprint service
 
-
-
-
-
   - [x] 5.1 Create fingerprint generation function
 
     - Implement generateFingerprint() using child_process to execute fpcalc
@@ -79,20 +75,26 @@
     - _Requirements: 2.2, 8.1_
   - [x] 5.2 Create duplicate detection function
 
-
     - Implement checkDuplicate() to query Song model by fingerprint
     - Return existing song document if found, null otherwise
     - _Requirements: 2.3, 8.2, 8.3_
 
-- [ ] 6. Implement storage service
-  - [ ] 6.1 Create file upload function
+- [x] 6. Implement storage service
+
+
+
+
+  - [x] 6.1 Create file upload function
+
+
     - Implement uploadFile() using AWS SDK PutObjectCommand
     - Accept file buffer, key, and MIME type as parameters
     - Upload to configured R2 bucket
     - Return file key on success
     - Handle and throw storage errors
     - _Requirements: 2.4, 10.1, 10.2, 10.4_
-  - [ ] 6.2 Create file retrieval function
+  - [x] 6.2 Create file retrieval function
+
     - Implement getFile() using AWS SDK GetObjectCommand
     - Accept file key as parameter
     - Return readable stream from R2
@@ -101,6 +103,7 @@
     - _Requirements: 4.1, 10.3, 10.4_
 
 - [ ] 7. Implement song upload endpoint
+
   - Create POST /songs/upload route with authentication middleware
   - Configure multer to handle multipart file upload
   - Extract file buffer and metadata (title, artist) from request
@@ -113,6 +116,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 8.1, 8.2, 8.3, 8.4_
 
 - [ ] 8. Implement song streaming endpoint
+
   - Create GET /songs/:id route with authentication middleware
   - Fetch song metadata from database by ID
   - Retrieve file from R2 using storage service and fileKey
@@ -177,6 +181,7 @@
 ## Frontend Implementation
 
 - [ ] 12. Initialize frontend project structure
+
   - Create Next.js project with TypeScript and Tailwind CSS
   - Install Firebase SDK and other dependencies
   - Configure Tailwind CSS
@@ -184,12 +189,14 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
 - [ ] 13. Configure Firebase Authentication
+
   - Create firebase.ts with Firebase SDK initialization
   - Configure Firebase project credentials from environment variables
   - Export auth instance and helper functions
   - _Requirements: 1.1, 1.2_
 
 - [ ] 14. Implement API client module
+
   - Create api.ts with HTTP client functions
   - Implement getIdToken() to retrieve current user's Firebase token
   - Create wrapper functions for all backend endpoints with automatic token injection
@@ -197,6 +204,7 @@
   - _Requirements: 1.2, 1.3_
 
 - [ ] 15. Create authentication hook
+
   - Implement useAuth() hook to manage authentication state
   - Provide signUp(), signIn(), signOut() functions
   - Track current user and loading state
