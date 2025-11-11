@@ -211,7 +211,6 @@
 
 - [x] 16. Build authentication pages
 
-
   - [x] 16.1 Create login page
 
     - Build login form with email and password inputs
