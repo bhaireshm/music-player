@@ -124,9 +124,6 @@
 
 - [x] 9. Implement playlist management endpoints
 
-
-
-
   - [x] 9.1 Create GET /playlists endpoint
 
     - Add authentication middleware
@@ -156,8 +153,9 @@
     - Delete playlist document from database
     - Return success confirmation
     - _Requirements: 5.3_
+-
 
-- [ ] 10. Implement error handling middleware
+- [x] 10. Implement error handling middleware
 
   - Create global error handler middleware
   - Format errors into consistent ErrorResponse structure
@@ -165,8 +163,9 @@
   - Log errors with context information
   - Return user-friendly error messages
   - _Requirements: 1.4, 2.5, 8.4, 10.4_
+-
 
-- [ ] 11. Create Express application entry point
+- [-] 11. Create Express application entry point
 
   - Initialize Express app in index.ts
   - Connect to MongoDB on startup
@@ -178,6 +177,8 @@
   - _Requirements: All requirements_
 
 - [ ] 11.1 Write backend integration tests
+
+
   - Test song upload flow with duplicate detection
   - Test song streaming with range requests
   - Test playlist CRUD operations
