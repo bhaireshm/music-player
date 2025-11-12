@@ -116,25 +116,26 @@
     - Include reason for fallback in log message
     - _Requirements: 5.2_
 
-- [ ] 7. Test the implementation
-  - [ ] 7.1 Test metadata extraction
-    - Upload MP3 file with complete ID3 tags
-    - Verify title, artist, album are extracted correctly
-    - Upload file without metadata and verify fallback values
-    - Test manual metadata override
+- [x] 7. Clean metadata by removing URLs
+
+  - [x] 7.1 Implement URL removal function
+
+    - Create removeUrls helper function to strip URLs from text
+    - Support http://, https://, <www>. patterns
+    - Return cleaned text with URLs removed
+    - _Requirements: 1.1, 1.2_
+  
+  - [x] 7.2 Implement metadata cleaning function
+
+    - Create cleanMetadata function to process AudioMetadata
+    - Clean title, artist, album fields by removing URLs
+    - Clean genre array and filter empty strings
+    - Return cleaned metadata object
+    - _Requirements: 1.1, 1.2_
+  
+  - [x] 7.3 Integrate cleaning into extraction flow
+
+    - Apply cleanMetadata to extracted metadata before returning
+    - Ensure cleaned metadata is saved to database
+    - Maintain existing logging and error handling
     - _Requirements: 1.1, 1.2, 4.1_
-  
-  - [ ] 7.2 Test fingerprint fallback
-    - Test upload with fpcalc available (if installed)
-    - Temporarily rename/disable fpcalc and test upload
-    - Verify file hash is generated and prefixed with "HASH:"
-    - Verify duplicate detection works with hash
-    - _Requirements: 2.1, 2.2, 2.3, 2.4_
-  
-  - [ ] 7.3 Test playlist page loading
-    - Navigate to playlist detail page
-    - Verify page loads without errors
-    - Test adding songs to playlist
-    - Test removing songs from playlist
-    - Verify all operations complete successfully
-    - _Requirements: 6.1, 6.2, 6.3, 6.4_

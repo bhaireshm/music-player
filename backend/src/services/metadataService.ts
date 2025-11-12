@@ -12,6 +12,70 @@ export interface AudioMetadata {
 }
 
 /**
+ * Remove URLs and website links from a string
+ * @param text - Text that may contain URLs
+ * @returns Cleaned text with URLs removed
+ */
+function removeUrls(text: string): string {
+  // Remove full URLs (http://, https://, www.)
+  let cleaned = text.replace(/(?:https?:\/\/|www\.)[^\s]+/gi, '');
+  
+  // Remove domain-like patterns (e.g., "MassTamilan.com", "example.org")
+  cleaned = cleaned.replace(/\b[\w-]+\.(com|org|net|in|io|co|fm|tv|me|info|biz)\b/gi, '');
+  
+  // Remove common separators like " - " that might be left over
+  cleaned = cleaned.replace(/\s*-\s*$/g, '').replace(/^\s*-\s*/g, '');
+  
+  return cleaned.trim();
+}
+
+/**
+ * Clean metadata by removing URLs from string fields
+ * @param metadata - Raw metadata object
+ * @returns Cleaned metadata object
+ */
+function cleanMetadata(metadata: AudioMetadata): AudioMetadata {
+  const cleaned: AudioMetadata = { ...metadata };
+  
+  // Clean string fields
+  if (cleaned.title) {
+    cleaned.title = removeUrls(cleaned.title);
+    // If title becomes empty after URL removal, set to undefined
+    if (cleaned.title.length === 0) {
+      cleaned.title = undefined;
+    }
+  }
+  if (cleaned.artist) {
+    cleaned.artist = removeUrls(cleaned.artist);
+    // If artist becomes empty after URL removal, set to undefined
+    if (cleaned.artist.length === 0) {
+      cleaned.artist = undefined;
+    }
+  }
+  if (cleaned.album) {
+    cleaned.album = removeUrls(cleaned.album);
+    // If album becomes empty after URL removal, set to undefined
+    if (cleaned.album.length === 0) {
+      cleaned.album = undefined;
+    }
+  }
+  
+  // Clean genre array
+  if (cleaned.genre && Array.isArray(cleaned.genre)) {
+    cleaned.genre = cleaned.genre
+      .map(g => removeUrls(g))
+      .filter(g => g.length > 0); // Remove empty strings after URL removal
+    
+    // If genre array becomes empty, set to undefined
+    if (cleaned.genre.length === 0) {
+      cleaned.genre = undefined;
+    }
+  }
+  
+  return cleaned;
+}
+
+/**
  * Extract metadata from an audio file buffer
  * @param fileBuffer - The audio file buffer to extract metadata from
  * @returns Promise resolving to AudioMetadata object
@@ -25,7 +89,7 @@ export async function extractMetadata(fileBuffer: Buffer): Promise<AudioMetadata
     const metadata = await parseBuffer(fileBuffer);
     
     // Extract common metadata fields
-    const audioMetadata: AudioMetadata = {
+    const rawMetadata: AudioMetadata = {
       title: metadata.common.title,
       artist: metadata.common.artist,
       album: metadata.common.album,
@@ -33,6 +97,9 @@ export async function extractMetadata(fileBuffer: Buffer): Promise<AudioMetadata
       genre: metadata.common.genre,
       duration: metadata.format.duration,
     };
+    
+    // Clean metadata by removing URLs
+    const audioMetadata = cleanMetadata(rawMetadata);
     
     // Count fields that were successfully extracted
     const fieldCount = Object.values(audioMetadata).filter(v => v !== undefined).length;

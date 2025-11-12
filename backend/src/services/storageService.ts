@@ -7,13 +7,15 @@ import { Readable } from 'stream';
  * @param fileBuffer - File content as buffer
  * @param key - Unique key/path for the file in R2
  * @param mimeType - MIME type of the file (e.g., 'audio/mpeg')
+ * @param metadata - Optional custom metadata to attach to the file
  * @returns The file key on success
  * @throws Error if upload fails
  */
 export async function uploadFile(
   fileBuffer: Buffer,
   key: string,
-  mimeType: string
+  mimeType: string,
+  metadata?: Record<string, string>
 ): Promise<string> {
   try {
     const command = new PutObjectCommand({
@@ -21,11 +23,15 @@ export async function uploadFile(
       Key: key,
       Body: fileBuffer,
       ContentType: mimeType,
+      Metadata: metadata,
     });
 
     await r2Client.send(command);
     
     console.log(`File uploaded successfully to R2: ${key}`);
+    if (metadata) {
+      console.log('Custom metadata attached:', metadata);
+    }
     return key;
   } catch (error) {
     if (error instanceof Error) {

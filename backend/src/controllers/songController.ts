@@ -118,9 +118,28 @@ export async function uploadSong(
     const fileExtension = filename.split('.').pop() || 'mp3';
     const fileKey = `songs/${randomUUID()}.${fileExtension}`;
 
-    // Upload file to R2
+    // Prepare custom metadata for R2
+    const r2Metadata: Record<string, string> = {
+      title: mergedMetadata.title,
+      artist: mergedMetadata.artist,
+    };
+    
+    if (mergedMetadata.album) {
+      r2Metadata.album = mergedMetadata.album;
+    }
+    if (mergedMetadata.year) {
+      r2Metadata.year = mergedMetadata.year.toString();
+    }
+    if (mergedMetadata.genre && mergedMetadata.genre.length > 0) {
+      r2Metadata.genre = mergedMetadata.genre.join(', ');
+    }
+    if (extractedMetadata.duration) {
+      r2Metadata.duration = extractedMetadata.duration.toString();
+    }
+
+    // Upload file to R2 with custom metadata
     console.log('Uploading file to R2...');
-    await uploadFile(fileBuffer, fileKey, mimeType);
+    await uploadFile(fileBuffer, fileKey, mimeType, r2Metadata);
     console.log('File uploaded successfully');
 
     // Save song metadata to database

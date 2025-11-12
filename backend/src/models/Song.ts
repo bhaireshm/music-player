@@ -8,7 +8,7 @@ export interface ISong extends Document {
   genre?: string[];
   fileKey: string;
   mimeType: string;
-  uploadedBy: Types.ObjectId;
+  uploadedBy: string; // Firebase UID
   fingerprint: string;
   createdAt: Date;
 }
@@ -44,8 +44,7 @@ const songSchema = new Schema<ISong>({
     required: true,
   },
   uploadedBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
+    type: String, // Firebase UID
     required: true,
   },
   fingerprint: {
