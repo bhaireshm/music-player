@@ -8,7 +8,7 @@
   - Remove Tailwind CSS dependencies from package.json and configuration files
   - _Requirements: 1.1, 1.4_
 
-- [-] 2. Enhance audio player hook with queue management
+- [x] 2. Enhance audio player hook with queue management
 
   - Extend useAudioPlayer hook to support queue state (songs array, currentIndex)
   - Implement next() function to advance to next song in queue
@@ -16,8 +16,9 @@
   - Implement setQueue() function to load songs into playback queue
   - Add logic to auto-play next song when current song ends
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
+-
 
-- [ ] 3. Redesign Navigation component with Mantine
+- [x] 3. Redesign Navigation component with Mantine
 
   - Replace Tailwind classes with Mantine AppShell.Header component
   - Implement responsive navigation with Burger menu for mobile
@@ -26,7 +27,7 @@
   - Implement dark mode toggle button
   - _Requirements: 1.1, 1.2, 1.3, 2.3, 9.7_
 
-- [ ] 4. Redesign Playing Bar component with Mantine
+- [x] 4. Redesign Playing Bar component with Mantine
 
   - Replace Tailwind classes with Mantine components (Group, Stack, ActionIcon, Slider)
   - Add album artwork display with Image component or placeholder
@@ -36,7 +37,7 @@
   - Use AppShell.Footer for fixed bottom positioning
   - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 5. Redesign landing page with Mantine
+- [x] 5. Redesign landing page with Mantine
 
   - Replace Tailwind classes with Mantine Container, Title, Text components
   - Use Card component for feature showcase sections
@@ -45,23 +46,34 @@
   - Ensure responsive design for mobile and desktop
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 3.1, 3.2, 9.1_
 
-- [ ] 6. Redesign authentication pages with Mantine
+- [x] 6. Redesign authentication pages with Mantine
 
-- [ ] 6.1 Redesign login page
+
+
+
+
+- [x] 6.1 Redesign login page
+
   - Replace Tailwind classes with Mantine Paper, TextInput, PasswordInput, Button
   - Center form in viewport with proper spacing
   - Add form validation using Mantine form utilities
   - Implement responsive layout (max-width on desktop, full-width on mobile)
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 3.1, 9.2_
 
-- [ ] 6.2 Redesign registration page
+
+- [x] 6.2 Redesign registration page
+
   - Replace Tailwind classes with Mantine components matching login page
   - Implement consistent styling with login page
   - Add form validation for email and password fields
   - Ensure responsive layout matches login page
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 3.1, 9.3_
+-
 
-- [ ] 7. Create AddToPlaylistMenu component
+- [x] 7. Create AddToPlaylistMenu component
+
+
+
 
   - Create new component using Mantine Menu component
   - Fetch and display list of user's playlists in Menu.Dropdown
@@ -71,7 +83,11 @@
   - Enforce 25 playlist limit per user
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 8. Redesign Library page with Mantine
+
+- [x] 8. Redesign Library page with Mantine
+
+
+
 
   - Replace Tailwind classes with Mantine components (Container, Title, Button, Table)
   - Use Table component for song list on desktop, Stack for mobile

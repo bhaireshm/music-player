@@ -23,6 +23,9 @@ export interface Song {
   artist: string;
   mimeType: string;
   createdAt: string;
+  albumArt?: string;
+  album?: string;
+  duration?: number;
 }
 
 /**
@@ -262,4 +265,28 @@ export async function deletePlaylist(playlistId: string): Promise<void> {
     method: 'DELETE',
   });
   await parseResponse<{ success: boolean }>(response);
+}
+
+/**
+ * Add a song to a playlist
+ */
+export async function addSongToPlaylist(
+  playlistId: string,
+  songId: string
+): Promise<Playlist> {
+  // First, get the current playlist
+  const playlist = await getPlaylist(playlistId);
+  
+  // Extract song IDs (handle both populated and unpopulated songIds)
+  const currentSongIds = playlist.songIds.map((song) => 
+    typeof song === 'string' ? song : song.id
+  );
+  
+  // Add the new song if it's not already in the playlist
+  if (!currentSongIds.includes(songId)) {
+    currentSongIds.push(songId);
+  }
+  
+  // Update the playlist with the new song list
+  return updatePlaylist(playlistId, currentSongIds);
 }

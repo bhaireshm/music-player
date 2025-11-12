@@ -10,6 +10,8 @@ interface AudioPlayerState {
   volume: number;
   loading: boolean;
   error: string | null;
+  queue: Song[];
+  currentIndex: number;
 }
 
 interface AudioPlayerActions {
@@ -18,6 +20,9 @@ interface AudioPlayerActions {
   seek: (time: number) => void;
   setVolume: (volume: number) => void;
   loadSong: (song: Song) => void;
+  next: () => void;
+  previous: () => void;
+  setQueue: (songs: Song[], startIndex?: number) => void;
 }
 
 export type UseAudioPlayerReturn = AudioPlayerState & AudioPlayerActions;
@@ -29,6 +34,8 @@ interface PersistedPlayerState {
   currentSong: Song | null;
   currentTime: number;
   volume: number;
+  queue: Song[];
+  currentIndex: number;
 }
 
 const STORAGE_KEY = 'audioPlayerState';
@@ -64,14 +71,11 @@ function savePersistedState(state: PersistedPlayerState): void {
   }
 }
 
-/**
- * Custom hook to manage audio player state and operations
- * Handles playback, seeking, volume control, and song loading
- * 
- * @returns {UseAudioPlayerReturn} Audio player state and action functions
- */
 export function useAudioPlayer(): UseAudioPlayerReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
+  
+  // Initialize state with default values to prevent hydration mismatch
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -79,22 +83,28 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const [volume, setVolumeState] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isRestored, setIsRestored] = useState<boolean>(false);
+  const [queue, setQueue] = useState<Song[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(-1);
 
-  // Initialize audio element and restore persisted state
+  // Initialize audio element and restore persisted state after mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isInitializedRef.current) {
+      isInitializedRef.current = true;
       audioRef.current = new Audio();
       
-      // Load persisted state
+      // Load persisted state after mount to prevent hydration mismatch
       const persistedState = loadPersistedState();
+      
       if (persistedState) {
+        // Restore state from localStorage
+        setCurrentSong(persistedState.currentSong);
+        setQueue(persistedState.queue);
+        setCurrentIndex(persistedState.currentIndex);
         setVolumeState(persistedState.volume);
         audioRef.current.volume = persistedState.volume;
         
         // Restore song and position if available
         if (persistedState.currentSong) {
-          setCurrentSong(persistedState.currentSong);
           // Load the song asynchronously
           (async () => {
             try {
@@ -113,19 +123,14 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
                   audioRef.current!.currentTime = persistedState.currentTime;
                   setCurrentTime(persistedState.currentTime);
                 }
-                setIsRestored(true);
               }, { once: true });
             } catch (err) {
               console.error('Failed to restore song:', err);
-              setIsRestored(true);
             }
           })();
-        } else {
-          setIsRestored(true);
         }
       } else {
         audioRef.current.volume = 1;
-        setIsRestored(true);
       }
 
       // Set up event listeners
@@ -137,11 +142,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
       const handleDurationChange = () => {
         setDuration(audio.duration);
-      };
-
-      const handleEnded = () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
       };
 
       const handlePlay = () => {
@@ -170,7 +170,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
       audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('durationchange', handleDurationChange);
-      audio.addEventListener('ended', handleEnded);
       audio.addEventListener('play', handlePlay);
       audio.addEventListener('pause', handlePause);
       audio.addEventListener('loadstart', handleLoadStart);
@@ -181,7 +180,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       return () => {
         audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('durationchange', handleDurationChange);
-        audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('play', handlePlay);
         audio.removeEventListener('pause', handlePause);
         audio.removeEventListener('loadstart', handleLoadStart);
@@ -283,16 +281,83 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     setVolumeState(clampedVolume);
   }, []);
 
+  /**
+   * Set the playback queue
+   * 
+   * @param {Song[]} songs - Array of songs to set as the queue
+   * @param {number} startIndex - Index of the song to start playing (default: 0)
+   */
+  const setQueueFunc = useCallback((songs: Song[], startIndex: number = 0) => {
+    setQueue(songs);
+    setCurrentIndex(startIndex);
+    
+    // Load the song at the start index if valid
+    if (startIndex >= 0 && startIndex < songs.length) {
+      loadSong(songs[startIndex]);
+    }
+  }, [loadSong]);
+
+  /**
+   * Advance to the next song in the queue
+   */
+  const next = useCallback(() => {
+    if (queue.length === 0) return;
+    
+    const nextIndex = currentIndex + 1;
+    
+    // Check if there's a next song
+    if (nextIndex < queue.length) {
+      setCurrentIndex(nextIndex);
+      loadSong(queue[nextIndex]);
+    }
+  }, [queue, currentIndex, loadSong]);
+
+  /**
+   * Go to the previous song in the queue
+   */
+  const previous = useCallback(() => {
+    if (queue.length === 0) return;
+    
+    const prevIndex = currentIndex - 1;
+    
+    // Check if there's a previous song
+    if (prevIndex >= 0) {
+      setCurrentIndex(prevIndex);
+      loadSong(queue[prevIndex]);
+    }
+  }, [queue, currentIndex, loadSong]);
+
+  // Auto-play next song when current song ends
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    const handleEnded = () => {
+      // Check if there's a next song in the queue
+      if (currentIndex >= 0 && currentIndex < queue.length - 1) {
+        next();
+      }
+    };
+
+    const audio = audioRef.current;
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [currentIndex, queue.length, next]);
+
   // Persist state changes to localStorage
   useEffect(() => {
-    if (!isRestored) return; // Don't save until initial restore is complete
+    if (!isInitializedRef.current) return; // Don't save until initial restore is complete
     
     savePersistedState({
       currentSong,
       currentTime,
       volume,
+      queue,
+      currentIndex,
     });
-  }, [currentSong, currentTime, volume, isRestored]);
+  }, [currentSong, currentTime, volume, queue, currentIndex]);
 
   return {
     currentSong,
@@ -302,10 +367,15 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     volume,
     loading,
     error,
+    queue,
+    currentIndex,
     play,
     pause,
     seek,
     setVolume,
     loadSong,
+    next,
+    previous,
+    setQueue: setQueueFunc,
   };
 }

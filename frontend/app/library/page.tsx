@@ -1,22 +1,57 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getSongs, Song } from '@/lib/api';
-import AudioPlayer from '@/components/AudioPlayer';
-import UploadForm from '@/components/UploadForm';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
+import UploadModal from '@/components/UploadModal';
+import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
+import {
+  Container,
+  Title,
+  Button,
+  Table,
+  Stack,
+  Text,
+  ActionIcon,
+  Menu,
+  Alert,
+  Box,
+  Group,
+  Skeleton,
+} from '@mantine/core';
+import {
+  IconPlayerPlay,
+  IconUpload,
+  IconMusic,
+  IconDots,
+  IconPlaylistAdd,
+  IconInfoCircle,
+  IconAlertCircle,
+} from '@tabler/icons-react';
+import PlayingAnimation from '@/components/PlayingAnimation';
 
 function LibraryPageContent() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
+  const router = useRouter();
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Fetch songs on component mount
   useEffect(() => {
-    fetchSongs();
-  }, []);
+    if (isMounted) {
+      fetchSongs();
+    }
+  }, [isMounted]);
 
   /**
    * Fetch all songs from the backend
@@ -39,8 +74,9 @@ function LibraryPageContent() {
   /**
    * Handle song selection for playback
    */
-  const handlePlaySong = (song: Song) => {
-    setCurrentSong(song);
+  const handlePlaySong = (song: Song, index: number) => {
+    // Set the queue to all songs starting from the selected song
+    setQueue(songs, index);
   };
 
   /**
@@ -48,141 +84,269 @@ function LibraryPageContent() {
    */
   const handleUploadSuccess = () => {
     fetchSongs();
-    setShowUploadForm(false);
+    setShowUploadModal(false);
+  };
+
+  /**
+   * Navigate to song details page
+   */
+  const handleSongDetails = (songId: string) => {
+    router.push(`/songs/${songId}`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">My Library</h1>
-            <button
-              onClick={() => setShowUploadForm(!showUploadForm)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition-colors"
-            >
-              {showUploadForm ? 'Hide Upload' : 'Upload Song'}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Upload Form */}
-        {showUploadForm && (
-          <div className="mb-8">
-            <UploadForm onUploadSuccess={handleUploadSuccess} />
-          </div>
-        )}
+    <Box pb={120}>
+      <Container size="xl" py="xl">
+        {/* Header */}
+        <Group justify="space-between" mb="xl">
+          <Title order={1}>My Library</Title>
+          <Button
+            leftSection={<IconUpload size={18} />}
+            onClick={() => setShowUploadModal(true)}
+          >
+            Upload Song
+          </Button>
+        </Group>
 
         {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
+          <Stack gap="md">
+            <Skeleton height={50} radius="md" />
+            <Skeleton height={50} radius="md" />
+            <Skeleton height={50} radius="md" />
+            <Skeleton height={50} radius="md" />
+          </Stack>
         )}
 
         {/* Error State */}
         {error && !loading && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-            <p>{error}</p>
-            <button
-              onClick={fetchSongs}
-              className="mt-2 text-sm underline hover:no-underline"
-            >
+          <Alert
+            icon={<IconAlertCircle size={18} />}
+            title="Error"
+            color="red"
+            variant="light"
+          >
+            <Text size="sm" mb="xs">
+              {error}
+            </Text>
+            <Button size="xs" variant="outline" onClick={fetchSongs}>
               Try again
-            </button>
-          </div>
+            </Button>
+          </Alert>
         )}
 
         {/* Empty State */}
         {!loading && !error && songs.length === 0 && (
-          <div className="text-center py-12">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No songs</h3>
-            <p className="mt-1 text-sm text-gray-500">
+          <Stack align="center" gap="md" py={60}>
+            <IconMusic size={48} stroke={1.5} color="var(--mantine-color-gray-5)" />
+            <Title order={3} c="dimmed">
+              No songs
+            </Title>
+            <Text c="dimmed" size="sm">
               Get started by uploading your first song.
-            </p>
-            <button
-              onClick={() => setShowUploadForm(true)}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition-colors"
+            </Text>
+            <Button
+              leftSection={<IconUpload size={18} />}
+              onClick={() => setShowUploadModal(true)}
             >
               Upload Song
-            </button>
-          </div>
+            </Button>
+          </Stack>
         )}
 
-        {/* Song List */}
-        {!loading && !error && songs.length > 0 && (
-          <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                All Songs ({songs.length})
-              </h2>
-            </div>
-            <ul className="divide-y divide-gray-200">
-              {songs.map((song) => (
-                <li
-                  key={song.id}
-                  className={`px-6 py-4 hover:bg-gray-50 transition-colors ${
-                    currentSong?.id === song.id ? 'bg-blue-50' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-medium text-gray-900 truncate">
-                        {song.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 truncate">
-                        {song.artist}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handlePlaySong(song)}
-                      className={`ml-4 flex-shrink-0 p-2 rounded-full transition-colors ${
-                        currentSong?.id === song.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                      aria-label={`Play ${song.title}`}
+        {/* Song List - Desktop Table */}
+        {!loading && !error && songs.length > 0 && isMounted && (
+          <>
+            <Box visibleFrom="md">
+              <Table highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Title</Table.Th>
+                    <Table.Th>Artist</Table.Th>
+                    <Table.Th>Album</Table.Th>
+                    <Table.Th w={100}>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {songs.map((song, index) => (
+                    <Table.Tr
+                      key={song.id}
+                      bg={
+                        audioCurrentSong?.id === song.id
+                          ? 'var(--mantine-color-blue-light)'
+                          : undefined
+                      }
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </main>
+                      <Table.Td>
+                        <Text fw={audioCurrentSong?.id === song.id ? 600 : 400}>
+                          {song.title}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text c="dimmed" size="sm">
+                          {song.artist}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text c="dimmed" size="sm">
+                          {song.album || '—'}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs" wrap="nowrap">
+                          <ActionIcon
+                            variant={audioCurrentSong?.id === song.id ? 'filled' : 'subtle'}
+                            color="blue"
+                            onClick={() => handlePlaySong(song, index)}
+                            aria-label={`Play ${song.title}`}
+                          >
+                            {audioCurrentSong?.id === song.id && isPlaying ? (
+                              <PlayingAnimation size={18} color="white" />
+                            ) : (
+                              <IconPlayerPlay size={18} />
+                            )}
+                          </ActionIcon>
+                          <Menu position="bottom-end" shadow="md">
+                            <Menu.Target>
+                              <ActionIcon variant="subtle" color="gray">
+                                <IconDots size={18} />
+                              </ActionIcon>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              <Menu.Item
+                                leftSection={<IconPlayerPlay size={16} />}
+                                onClick={() => handlePlaySong(song, index)}
+                              >
+                                Play
+                              </Menu.Item>
+                              <Menu
+                                trigger="hover"
+                                position="left-start"
+                                offset={2}
+                                withArrow
+                              >
+                                <Menu.Target>
+                                  <Menu.Item leftSection={<IconPlaylistAdd size={16} />}>
+                                    Add to Playlist
+                                  </Menu.Item>
+                                </Menu.Target>
+                                <AddToPlaylistMenu
+                                  songId={song.id}
+                                  onSuccess={fetchSongs}
+                                />
+                              </Menu>
+                              <Menu.Item
+                                leftSection={<IconInfoCircle size={16} />}
+                                onClick={() => handleSongDetails(song.id)}
+                              >
+                                Song Details
+                              </Menu.Item>
+                            </Menu.Dropdown>
+                          </Menu>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Box>
 
-      {/* Audio Player */}
-      <AudioPlayer song={currentSong} />
-    </div>
+            {/* Song List - Mobile Stack */}
+            <Stack gap="xs" hiddenFrom="md">
+              {songs.map((song, index) => (
+                <Box
+                  key={song.id}
+                  p="md"
+                  style={{
+                    backgroundColor:
+                      audioCurrentSong?.id === song.id
+                        ? 'var(--mantine-color-blue-light)'
+                        : 'var(--mantine-color-body)',
+                    borderRadius: 'var(--mantine-radius-md)',
+                    border: '1px solid var(--mantine-color-default-border)',
+                  }}
+                >
+                  <Group justify="space-between" wrap="nowrap">
+                    <Box style={{ minWidth: 0, flex: 1 }}>
+                      <Text
+                        fw={audioCurrentSong?.id === song.id ? 600 : 400}
+                        truncate
+                      >
+                        {song.title}
+                      </Text>
+                      <Text c="dimmed" size="sm" truncate>
+                        {song.artist}
+                      </Text>
+                    </Box>
+                    <Group gap="xs" wrap="nowrap">
+                      <ActionIcon
+                        variant={audioCurrentSong?.id === song.id ? 'filled' : 'subtle'}
+                        color="blue"
+                        size="lg"
+                        onClick={() => handlePlaySong(song, index)}
+                        aria-label={`Play ${song.title}`}
+                      >
+                        {audioCurrentSong?.id === song.id && isPlaying ? (
+                          <PlayingAnimation size={20} color="white" />
+                        ) : (
+                          <IconPlayerPlay size={20} />
+                        )}
+                      </ActionIcon>
+                      <Menu position="bottom-end" shadow="md">
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" color="gray" size="lg">
+                            <IconDots size={20} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item
+                            leftSection={<IconPlayerPlay size={16} />}
+                            onClick={() => handlePlaySong(song, index)}
+                          >
+                            Play
+                          </Menu.Item>
+                          <Menu
+                            trigger="hover"
+                            position="left-start"
+                            offset={2}
+                            withArrow
+                          >
+                            <Menu.Target>
+                              <Menu.Item leftSection={<IconPlaylistAdd size={16} />}>
+                                Add to Playlist
+                              </Menu.Item>
+                            </Menu.Target>
+                            <AddToPlaylistMenu
+                              songId={song.id}
+                              onSuccess={fetchSongs}
+                            />
+                          </Menu>
+                          <Menu.Item
+                            leftSection={<IconInfoCircle size={16} />}
+                            onClick={() => handleSongDetails(song.id)}
+                          >
+                            Song Details
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+                  </Group>
+                </Box>
+              ))}
+            </Stack>
+          </>
+        )}
+      </Container>
+
+      {/* Upload Modal */}
+      <UploadModal
+        opened={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUploadSuccess={handleUploadSuccess}
+      />
+    </Box>
   );
 }
-
 
 export default function LibraryPage() {
   return (

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import Navigation from "@/components/Navigation";
+import ClientLayout from "@/components/ClientLayout";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./globals.css";
@@ -17,11 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="auto" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <MantineProvider
           defaultColorScheme="auto"
           theme={{
@@ -31,11 +31,13 @@ export default function RootLayout({
               fontFamily: "Inter, system-ui, sans-serif",
               fontWeight: "600",
             },
+            other: {
+              gradient: "linear-gradient(135deg, var(--mantine-color-blue-0) 0%, var(--mantine-color-indigo-1) 100%)",
+            },
           }}
         >
           <Notifications position="top-right" />
-          <Navigation />
-          {children}
+          <ClientLayout>{children}</ClientLayout>
         </MantineProvider>
       </body>
     </html>
