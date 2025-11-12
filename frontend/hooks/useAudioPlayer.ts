@@ -162,6 +162,10 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         setLoading(false);
       };
 
+      const handleLoadedData = () => {
+        setLoading(false);
+      };
+
       const handleError = () => {
         setError('Failed to load audio');
         setLoading(false);
@@ -174,6 +178,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       audio.addEventListener('pause', handlePause);
       audio.addEventListener('loadstart', handleLoadStart);
       audio.addEventListener('canplay', handleCanPlay);
+      audio.addEventListener('loadeddata', handleLoadedData);
       audio.addEventListener('error', handleError);
 
       // Cleanup
@@ -184,6 +189,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         audio.removeEventListener('pause', handlePause);
         audio.removeEventListener('loadstart', handleLoadStart);
         audio.removeEventListener('canplay', handleCanPlay);
+        audio.removeEventListener('loadeddata', handleLoadedData);
         audio.removeEventListener('error', handleError);
         audio.pause();
         audio.src = '';
@@ -221,13 +227,17 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       setCurrentTime(0);
       
       // Auto-play the song once it's ready
-      audioRef.current.addEventListener('canplay', () => {
+      const handleCanPlayAutoPlay = () => {
+        setLoading(false);
         audioRef.current?.play().catch((err) => {
           console.error('Auto-play error:', err);
           setError('Failed to play audio');
           setIsPlaying(false);
+          setLoading(false);
         });
-      }, { once: true });
+      };
+      
+      audioRef.current.addEventListener('canplay', handleCanPlayAutoPlay, { once: true });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load song';
       setError(errorMessage);

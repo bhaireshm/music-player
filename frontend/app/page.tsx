@@ -16,6 +16,8 @@ import {
   Loader,
   ThemeIcon,
   Box,
+  useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconUpload,
@@ -27,6 +29,8 @@ import { useAuth } from '@/hooks/useAuth';
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
   // Redirect authenticated users to library
   useEffect(() => {
@@ -50,14 +54,14 @@ export default function Home() {
   // Show landing page for unauthenticated users
   return (
     <Box
-      style={(theme) => ({
+      style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: theme.other?.gradient || 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
-        padding: 'var(--mantine-spacing-md)',
-      })}
+        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
+        padding: theme.spacing.md,
+      }}
     >
       <Container size="lg">
         <Stack align="center" gap="xl">
@@ -66,15 +70,20 @@ export default function Home() {
               order={1}
               size="3.5rem"
               ta="center"
-              c="white"
+              c="tertiary.0"
               style={{
                 fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
-                textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                textShadow: `0 ${theme.spacing.xs} ${theme.spacing.sm} rgba(0, 0, 0, 0.3)`,
               }}
             >
               Welcome to Music Player
             </Title>
-            <Text size="xl" c="silver.4" ta="center" maw={600}>
+            <Text 
+              size="xl" 
+              c="tertiary.1" 
+              ta="center" 
+              maw={600}
+            >
               Upload, organize, and stream your music collection from anywhere
             </Text>
           </Stack>
@@ -82,10 +91,12 @@ export default function Home() {
           <Card
             shadow="xl"
             padding="xl"
-            radius="lg"
+            radius="md"
             style={{
               width: '100%',
-              background: 'rgba(255, 255, 255, 0.95)',
+              background: colorScheme === 'dark' 
+                ? `rgba(${parseInt(theme.colors.primary[9].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[9].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[9].slice(5, 7), 16)}, 0.95)`
+                : `rgba(${parseInt(theme.colors.primary[0].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[0].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[0].slice(5, 7), 16)}, 0.95)`,
               backdropFilter: 'blur(10px)',
             }}
           >
@@ -96,26 +107,25 @@ export default function Home() {
               >
                 <Card 
                   padding="lg" 
-                  radius="md" 
+                  radius="sm"
                   style={{
-                    background: 'linear-gradient(135deg, #0056e6 0%, #34495e 100%)',
+                    background: `linear-gradient(135deg, ${theme.colors.accent1[6]} 0%, ${theme.colors.accent1[8]} 100%)`,
                     border: 'none',
-                    color: 'white',
                   }}
                 >
                   <Stack align="center" gap="md">
                     <ThemeIcon
                       size={64}
                       radius="xl"
-                      variant="white"
-                      color="deepBlue"
+                      variant="light"
+                      color="tertiary"
                     >
                       <IconUpload size={32} />
                     </ThemeIcon>
-                    <Title order={3} size="h4" ta="center" c="white">
+                    <Title order={3} size="h4" ta="center" c="tertiary.0">
                       Upload Your Music
                     </Title>
-                    <Text size="sm" c="silver.4" ta="center">
+                    <Text size="sm" c="tertiary.1" ta="center">
                       Upload your favorite songs with automatic duplicate detection
                     </Text>
                   </Stack>
@@ -123,26 +133,25 @@ export default function Home() {
 
                 <Card 
                   padding="lg" 
-                  radius="md"
+                  radius="sm"
                   style={{
-                    background: 'linear-gradient(135deg, #1a75ff 0%, #7f8c8d 100%)',
+                    background: `linear-gradient(135deg, ${theme.colors.accent2[5]} 0%, ${theme.colors.accent2[7]} 100%)`,
                     border: 'none',
-                    color: 'white',
                   }}
                 >
                   <Stack align="center" gap="md">
                     <ThemeIcon
                       size={64}
                       radius="xl"
-                      variant="white"
-                      color="deepBlue"
+                      variant="light"
+                      color="tertiary"
                     >
                       <IconPlaylist size={32} />
                     </ThemeIcon>
-                    <Title order={3} size="h4" ta="center" c="white">
+                    <Title order={3} size="h4" ta="center" c="tertiary.0">
                       Create Playlists
                     </Title>
-                    <Text size="sm" c="silver.4" ta="center">
+                    <Text size="sm" c="tertiary.1" ta="center">
                       Organize your music into custom playlists
                     </Text>
                   </Stack>
@@ -150,26 +159,25 @@ export default function Home() {
 
                 <Card 
                   padding="lg" 
-                  radius="md"
+                  radius="sm"
                   style={{
-                    background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+                    background: `linear-gradient(135deg, ${theme.colors.accent1[7]} 0%, ${theme.colors.secondary[6]} 100%)`,
                     border: 'none',
-                    color: 'white',
                   }}
                 >
                   <Stack align="center" gap="md">
                     <ThemeIcon
                       size={64}
                       radius="xl"
-                      variant="white"
-                      color="slate"
+                      variant="light"
+                      color="tertiary"
                     >
                       <IconMusic size={32} />
                     </ThemeIcon>
-                    <Title order={3} size="h4" ta="center" c="white">
+                    <Title order={3} size="h4" ta="center" c="tertiary.0">
                       Stream Anywhere
                     </Title>
-                    <Text size="sm" c="silver.4" ta="center">
+                    <Text size="sm" c="tertiary.1" ta="center">
                       Listen to your music from any device
                     </Text>
                   </Stack>
@@ -181,10 +189,10 @@ export default function Home() {
                   component={Link}
                   href="/register"
                   size="lg"
-                  radius="md"
-                  color="deepBlue"
+                  radius="sm"
+                  color="accent1"
                   variant="gradient"
-                  gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+                  gradient={{ from: 'accent1.6', to: 'accent1.8', deg: 135 }}
                 >
                   Get Started
                 </Button>
@@ -192,9 +200,9 @@ export default function Home() {
                   component={Link}
                   href="/login"
                   size="lg"
-                  radius="md"
+                  radius="sm"
                   variant="outline"
-                  color="deepBlue"
+                  color="accent1"
                 >
                   Sign In
                 </Button>
@@ -202,7 +210,7 @@ export default function Home() {
             </Stack>
           </Card>
 
-          <Text size="sm" c="silver.4">
+          <Text size="sm" c="tertiary.2">
             Secure authentication powered by Firebase
           </Text>
         </Stack>

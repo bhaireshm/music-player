@@ -1,8 +1,36 @@
 /* Global styles for the Music Player application */
 
+/* Root-level CSS custom properties for theme transitions */
+:root {
+  /* Transition durations */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 400ms;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: var(--transition-normal);
+  transition-timing-function: var(--transition-timing);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Ensure minimum touch target sizes on mobile devices */
 @media (max-width: 768px) {
-  /* Ensure all interactive elements meet minimum touch target size */
+  /* Ensure all interactive elements meet minimum touch target size (44x44px) */
   button,
   a,
   [role="button"],
@@ -50,11 +78,21 @@
   }
 }
 
-/* Improve focus visibility for keyboard navigation */
+/* Improve focus visibility for keyboard navigation with theme-aware colors */
 *:focus-visible {
-  outline: 2px solid #011f4b;
+  outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(1, 31, 75, 0.1);
+  box-shadow: 0 0 0 4px var(--mantine-primary-color-filled-hover);
+  transition: outline-color var(--transition-fast) var(--transition-timing),
+              box-shadow var(--transition-fast) var(--transition-timing);
+}
+
+/* Enhanced focus styles for better accessibility */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
 }
 
 /* Ensure proper spacing for mobile layouts */
@@ -79,12 +117,27 @@
     transform: none;
   }
 
-  /* Add active state feedback for touch */
+  /* Add active state feedback for touch with smooth transitions */
   button:active,
   a:active,
   [role="button"]:active {
     opacity: 0.7;
     transform: scale(0.98);
+    transition: opacity var(--transition-fast) var(--transition-timing),
+                transform var(--transition-fast) var(--transition-timing);
+  }
+}
+
+/* Smooth hover transitions for desktop */
+@media (hover: hover) and (pointer: fine) {
+  button,
+  a,
+  [role="button"] {
+    transition: background-color var(--transition-fast) var(--transition-timing),
+                color var(--transition-fast) var(--transition-timing),
+                border-color var(--transition-fast) var(--transition-timing),
+                transform var(--transition-fast) var(--transition-timing),
+                opacity var(--transition-fast) var(--transition-timing);
   }
 }
 
@@ -153,6 +206,9 @@
 /* Ensure adequate spacing for icon buttons */
 .mantine-ActionIcon-root {
   flex-shrink: 0;
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing);
 }
 
 /* Improve text input touch targets */
@@ -160,11 +216,16 @@
 .mantine-PasswordInput-input,
 .mantine-Textarea-input {
   min-height: 44px;
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing),
+              color var(--transition-normal) var(--transition-timing);
 }
 
 /* Ensure file input has adequate touch target */
 .mantine-FileInput-input {
   min-height: 44px;
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
 }
 
 /* Improve notification positioning on mobile */
@@ -172,4 +233,190 @@
   .mantine-Notifications-root {
     bottom: calc(100px + 16px) !important;
   }
+}
+
+/* Theme-aware transitions for common Mantine components */
+.mantine-Card-root,
+.mantine-Paper-root {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing),
+              box-shadow var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-Button-root {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing),
+              transform var(--transition-fast) var(--transition-timing);
+}
+
+.mantine-NavLink-root {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing);
+}
+
+.mantine-Menu-dropdown,
+.mantine-Modal-content,
+.mantine-Drawer-content {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for text color changes */
+h1, h2, h3, h4, h5, h6, p, span, div {
+  transition: color var(--transition-normal) var(--transition-timing);
+}
+
+/* Ensure links have smooth color transitions */
+a {
+  transition: color var(--transition-fast) var(--transition-timing),
+              background-color var(--transition-fast) var(--transition-timing);
+}
+
+/* Theme-aware body background transition */
+body {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for SegmentedControl (theme switcher) */
+.mantine-SegmentedControl-root {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-SegmentedControl-label {
+  transition: color var(--transition-fast) var(--transition-timing);
+}
+
+.mantine-SegmentedControl-indicator {
+  transition: transform var(--transition-normal) var(--transition-timing),
+              background-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for Select and other form controls */
+.mantine-Select-dropdown,
+.mantine-MultiSelect-dropdown {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-Select-option,
+.mantine-MultiSelect-option {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Checkbox and Radio */
+.mantine-Checkbox-input,
+.mantine-Radio-radio {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Switch */
+.mantine-Switch-track {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-Switch-thumb {
+  transition: transform var(--transition-normal) var(--transition-timing),
+              background-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for Tabs */
+.mantine-Tabs-tab {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Accordion */
+.mantine-Accordion-item {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-Accordion-control {
+  transition: background-color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Badge */
+.mantine-Badge-root {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Chip */
+.mantine-Chip-root {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing);
+}
+
+.mantine-Chip-label {
+  transition: color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Alert */
+.mantine-Alert-root {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for Progress */
+.mantine-Progress-root {
+  transition: background-color var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-Progress-section {
+  transition: width var(--transition-normal) var(--transition-timing),
+              background-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for Slider */
+.mantine-Slider-root {
+  transition: opacity var(--transition-fast) var(--transition-timing);
+}
+
+.mantine-Slider-track {
+  transition: background-color var(--transition-normal) var(--transition-timing);
+}
+
+.mantine-Slider-thumb {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              border-color var(--transition-fast) var(--transition-timing),
+              transform var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Skeleton (loading states) */
+.mantine-Skeleton-root {
+  transition: background-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for Divider */
+.mantine-Divider-root {
+  transition: border-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for AppShell components */
+.mantine-AppShell-header,
+.mantine-AppShell-navbar,
+.mantine-AppShell-aside,
+.mantine-AppShell-footer {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
+}
+
+/* Smooth transitions for Tooltip */
+.mantine-Tooltip-tooltip {
+  transition: background-color var(--transition-fast) var(--transition-timing),
+              color var(--transition-fast) var(--transition-timing);
+}
+
+/* Smooth transitions for Popover */
+.mantine-Popover-dropdown {
+  transition: background-color var(--transition-normal) var(--transition-timing),
+              border-color var(--transition-normal) var(--transition-timing);
 }

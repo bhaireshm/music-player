@@ -148,6 +148,7 @@ export default function AddToPlaylistMenu({ songId, onSuccess }: AddToPlaylistMe
         }}
         title="Create New Playlist"
         centered
+        size="md"
       >
         <TextInput
           label="Playlist Name"
@@ -156,6 +157,7 @@ export default function AddToPlaylistMenu({ songId, onSuccess }: AddToPlaylistMe
           onChange={(e) => setNewPlaylistName(e.target.value)}
           disabled={creating}
           data-autofocus
+          size="md"
         />
         
         <Button
@@ -164,6 +166,7 @@ export default function AddToPlaylistMenu({ songId, onSuccess }: AddToPlaylistMe
           onClick={handleCreatePlaylist}
           disabled={creating || !newPlaylistName.trim()}
           loading={creating}
+          size="md"
         >
           Create and Add Song
         </Button>

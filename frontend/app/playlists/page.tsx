@@ -20,6 +20,8 @@ import {
   Modal,
   TextInput,
   ActionIcon,
+  useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconPlaylist,
@@ -36,6 +38,8 @@ function PlaylistsPageContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [creating, setCreating] = useState(false);
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
   useEffect(() => {
     fetchPlaylists();
@@ -115,12 +119,12 @@ function PlaylistsPageContent() {
     <Box pb={80}>
       <Container size="xl" py="xl">
         {/* Header */}
-        <Group justify="space-between" align="center" mb="lg">
+        <Group justify="space-between" align="center" mb={theme.spacing.lg}>
           <div>
             <Title 
               order={1}
               style={{
-                background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+                background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -137,7 +141,7 @@ function PlaylistsPageContent() {
             leftSection={<IconPlus size={16} />}
             onClick={() => setShowCreateModal(true)}
             variant="gradient"
-            gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+            gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
             size="sm"
           >
             New Playlist
@@ -146,10 +150,10 @@ function PlaylistsPageContent() {
 
         {/* Loading State */}
         {loading && (
-          <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
-            <Skeleton height={150} radius="md" />
-            <Skeleton height={150} radius="md" />
-            <Skeleton height={150} radius="md" />
+          <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing={theme.spacing.md}>
+            <Skeleton height={150} radius={theme.radius.md} />
+            <Skeleton height={150} radius={theme.radius.md} />
+            <Skeleton height={150} radius={theme.radius.md} />
           </SimpleGrid>
         )}
 
@@ -175,24 +179,24 @@ function PlaylistsPageContent() {
           <Card
             shadow="sm"
             padding="lg"
-            radius="md"
+            radius={theme.radius.md}
             style={{
-              background: 'white',
-              border: '1px solid rgba(189, 195, 199, 0.2)',
+              background: colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.primary[0],
+              border: `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
             }}
           >
-            <Stack align="center" gap="md" py={40}>
+            <Stack align="center" gap={theme.spacing.md} py={40}>
               <Box
                 style={{
-                  background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+                  background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
                   borderRadius: '50%',
-                  padding: '16px',
+                  padding: theme.spacing.md,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <IconPlaylist size={32} stroke={1.5} color="white" />
+                <IconPlaylist size={32} stroke={1.5} color={theme.colors.primary[0]} />
               </Box>
               <Stack gap="xs" align="center">
                 <Text size="lg" fw={600}>
@@ -206,7 +210,7 @@ function PlaylistsPageContent() {
                 leftSection={<IconPlus size={16} />}
                 onClick={() => setShowCreateModal(true)}
                 variant="gradient"
-                gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+                gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
                 size="sm"
               >
                 Create Playlist
@@ -217,7 +221,7 @@ function PlaylistsPageContent() {
 
         {/* Playlist Grid */}
         {!loading && !error && playlists.length > 0 && (
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={theme.spacing.md}>
             {playlists.map((playlist) => {
               const songCount = Array.isArray(playlist.songIds) ? playlist.songIds.length : 0;
               
@@ -226,32 +230,32 @@ function PlaylistsPageContent() {
                   key={playlist.id}
                   shadow="sm"
                   padding="md"
-                  radius="md"
+                  radius={theme.radius.md}
                   style={{
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    background: 'white',
-                    border: '1px solid rgba(189, 195, 199, 0.2)',
+                    transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
+                    background: colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.primary[0],
+                    border: `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(1, 31, 75, 0.1)';
-                    e.currentTarget.style.borderColor = '#011f4b';
+                    e.currentTarget.style.boxShadow = theme.shadows.md;
+                    e.currentTarget.style.borderColor = theme.colors.accent1[6];
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
-                    e.currentTarget.style.borderColor = 'rgba(189, 195, 199, 0.2)';
+                    e.currentTarget.style.boxShadow = theme.shadows.sm;
+                    e.currentTarget.style.borderColor = colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3];
                   }}
                   onClick={() => handleViewPlaylist(playlist.id)}
                 >
-                  <Stack gap="sm">
-                    <Group gap="sm" wrap="nowrap">
+                  <Stack gap={theme.spacing.sm}>
+                    <Group gap={theme.spacing.sm} wrap="nowrap">
                       <Box
                         style={{
-                          background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
-                          borderRadius: '8px',
-                          padding: '10px',
+                          background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
+                          borderRadius: theme.radius.sm,
+                          padding: theme.spacing.sm,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -259,7 +263,7 @@ function PlaylistsPageContent() {
                           height: '44px',
                         }}
                       >
-                        <IconPlaylist size={24} stroke={1.5} color="white" />
+                        <IconPlaylist size={24} stroke={1.5} color={theme.colors.primary[0]} />
                       </Box>
                       <Box style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} lineClamp={1}>
@@ -275,7 +279,7 @@ function PlaylistsPageContent() {
                         flex={1}
                         size="xs"
                         variant="light"
-                        color="deepBlue"
+                        color="accent1"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleViewPlaylist(playlist.id);
@@ -316,7 +320,7 @@ function PlaylistsPageContent() {
             fw={600} 
             size="md"
             style={{
-              background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+              background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -330,7 +334,7 @@ function PlaylistsPageContent() {
         padding="md"
       >
         <form onSubmit={handleCreatePlaylist}>
-          <Stack gap="sm">
+          <Stack gap={theme.spacing.sm}>
             <TextInput
               label="Name"
               placeholder="My Playlist"
@@ -358,7 +362,7 @@ function PlaylistsPageContent() {
                 loading={creating}
                 disabled={!newPlaylistName.trim()}
                 variant="gradient"
-                gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+                gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
                 size="xs"
               >
                 Create

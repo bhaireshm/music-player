@@ -128,6 +128,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
               ? `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
               : undefined
           }
+          size="md"
         />
 
         {/* Title Input */}
@@ -138,6 +139,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           disabled={isUploading}
           required
+          size="md"
         />
 
         {/* Artist Input */}
@@ -148,6 +150,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
           onChange={(e) => setArtist(e.target.value)}
           disabled={isUploading}
           required
+          size="md"
         />
 
         {/* Upload Progress Bar */}
@@ -156,7 +159,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
             <Text size="sm" c="dimmed">
               Uploading... {uploadProgress}%
             </Text>
-            <Progress value={uploadProgress} animated />
+            <Progress value={uploadProgress} animated size="md" />
           </Stack>
         )}
 
@@ -181,6 +184,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
           fullWidth
           leftSection={isUploading ? undefined : <IconUpload size={16} />}
           loading={isUploading}
+          size="md"
         >
           {isUploading ? 'Uploading...' : 'Upload Song'}
         </Button>

@@ -10,8 +10,8 @@ import {
   Text,
   Image,
   Box,
+  useMantineTheme,
 } from '@mantine/core';
-import { GRADIENTS, BORDERS } from '@/lib/theme-constants';
 import {
   IconPlayerPlay,
   IconPlayerPause,
@@ -29,6 +29,7 @@ interface AudioPlayerProps {
 }
 
 export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
+  const theme = useMantineTheme();
   const {
     currentSong,
     isPlaying,
@@ -46,6 +47,13 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
     next,
     previous,
   } = useAudioPlayerContext();
+
+  // Use theme1 light colors
+  const textColor = theme.colors.tertiary[9];
+  const borderColor = theme.colors.secondary[3];
+  const hoverBg = theme.colors.secondary[1];
+  const hoverBorder = theme.colors.secondary[4];
+  const trackBg = theme.colors.secondary[2];
 
 
 
@@ -92,14 +100,14 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
           left: 0,
           right: 0,
           height: 64,
-          background: 'rgba(255, 255, 255, 0.98)',
+          background: theme.colors.primary[0],
           backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+          borderTop: `1px solid ${theme.colors.secondary[3]}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
+          boxShadow: theme.shadows.sm,
         }}
       >
         <Text c="dimmed" size="sm">
@@ -117,12 +125,12 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         left: 0,
         right: 0,
         height: 64,
-        background: 'rgba(255, 255, 255, 0.98)',
+        background: theme.colors.primary[0],
         backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-        padding: '8px 20px',
+        borderTop: `1px solid ${theme.colors.secondary[3]}`,
+        padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
         zIndex: 100,
-        boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
+        boxShadow: theme.shadows.sm,
       }}
     >
       {/* Desktop Layout */}
@@ -139,9 +147,9 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
           <Box
             style={{
               position: 'relative',
-              borderRadius: '4px',
+              borderRadius: theme.radius.sm,
               overflow: 'hidden',
-              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: theme.shadows.xs,
             }}
           >
             <Image
@@ -154,10 +162,21 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             />
           </Box>
           <Box style={{ minWidth: 0, flex: 1 }}>
-            <Text size="sm" fw={600} truncate style={{ color: '#1a1a1a', fontSize: '13px' }}>
+            <Text 
+              size="sm" 
+              fw={600} 
+              truncate 
+              c={textColor}
+              style={{ fontSize: '13px' }}
+            >
               {currentSong.title}
             </Text>
-            <Text size="xs" truncate style={{ color: '#666', fontSize: '11px' }}>
+            <Text 
+              size="xs" 
+              truncate 
+              c="dimmed"
+              style={{ fontSize: '11px' }}
+            >
               {currentSong.artist}
             </Text>
           </Box>
@@ -176,12 +195,12 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               aria-label="Previous song"
               styles={{
                 root: {
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  border: `1px solid ${borderColor}`,
                   '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                    borderColor: 'rgba(0, 0, 0, 0.12)',
+                    backgroundColor: hoverBg,
+                    borderColor: hoverBorder,
                   },
-                  transition: 'all 0.2s ease',
+                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                 },
               }}
             >
@@ -190,7 +209,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
             <ActionIcon
               variant="gradient"
-              gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+              gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
               size={38}
               radius="xl"
               onClick={togglePlayPause}
@@ -199,12 +218,12 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               aria-label={isPlaying ? 'Pause' : 'Play'}
               styles={{
                 root: {
-                  boxShadow: '0 3px 10px rgba(1, 31, 75, 0.2)',
+                  boxShadow: theme.shadows.md,
                   '&:hover': {
                     transform: 'scale(1.05)',
-                    boxShadow: '0 4px 12px rgba(1, 31, 75, 0.25)',
+                    boxShadow: theme.shadows.lg,
                   },
-                  transition: 'all 0.2s ease',
+                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                 },
               }}
             >
@@ -225,12 +244,12 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               aria-label="Next song"
               styles={{
                 root: {
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  border: `1px solid ${borderColor}`,
                   '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                    borderColor: 'rgba(0, 0, 0, 0.12)',
+                    backgroundColor: hoverBg,
+                    borderColor: hoverBorder,
                   },
-                  transition: 'all 0.2s ease',
+                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                 },
               }}
             >
@@ -253,7 +272,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               },
               track: {
                 '&::before': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: trackBg,
                 },
               },
             }}
@@ -271,10 +290,11 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             aria-label="Toggle mute"
             styles={{
               root: {
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                border: `1px solid ${borderColor}`,
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: hoverBg,
                 },
+                transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
               },
             }}
           >
@@ -296,7 +316,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               },
               track: {
                 '&::before': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: trackBg,
                 },
               },
             }}
@@ -310,9 +330,9 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         <Group gap="xs" style={{ minWidth: 0, flex: 1 }}>
           <Box
             style={{
-              borderRadius: '4px',
+              borderRadius: theme.radius.sm,
               overflow: 'hidden',
-              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+              boxShadow: theme.shadows.xs,
             }}
           >
             <Image
@@ -325,10 +345,21 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             />
           </Box>
           <Box style={{ minWidth: 0, flex: 1 }}>
-            <Text size="xs" fw={600} truncate style={{ color: '#1a1a1a', fontSize: '12px' }}>
+            <Text 
+              size="xs" 
+              fw={600} 
+              truncate 
+              c={textColor}
+              style={{ fontSize: '12px' }}
+            >
               {currentSong.title}
             </Text>
-            <Text size="xs" truncate style={{ fontSize: '10px', color: '#666' }}>
+            <Text 
+              size="xs" 
+              truncate 
+              c="dimmed"
+              style={{ fontSize: '10px' }}
+            >
               {currentSong.artist}
             </Text>
           </Box>
@@ -346,10 +377,11 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             aria-label="Previous song"
             styles={{
               root: {
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                border: `1px solid ${borderColor}`,
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: hoverBg,
                 },
+                transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
               },
             }}
           >
@@ -358,7 +390,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
           <ActionIcon
             variant="gradient"
-            gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+            gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
             size={38}
             radius="xl"
             onClick={togglePlayPause}
@@ -367,7 +399,8 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             aria-label={isPlaying ? 'Pause' : 'Play'}
             styles={{
               root: {
-                boxShadow: '0 2px 8px rgba(1, 31, 75, 0.2)',
+                boxShadow: theme.shadows.sm,
+                transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
               },
             }}
           >
@@ -388,10 +421,11 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             aria-label="Next song"
             styles={{
               root: {
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                border: `1px solid ${borderColor}`,
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  backgroundColor: hoverBg,
                 },
+                transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
               },
             }}
           >

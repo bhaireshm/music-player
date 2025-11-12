@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -12,13 +11,11 @@ import {
   ActionIcon,
   Text,
   NavLink,
-  useMantineColorScheme,
+  useMantineTheme,
   Divider,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
-  IconSun,
-  IconMoon,
   IconUser,
   IconLogout,
   IconMusic,
@@ -27,25 +24,18 @@ import {
   IconSettings,
 } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
-import { GRADIENTS, BACKGROUNDS, COLORS } from '@/lib/theme-constants';
 
 /**
  * Navigation component with links to main pages and user authentication display
  * Shows current user email and logout button when authenticated
  * Includes responsive mobile menu with Burger and Drawer
- * Includes dark mode toggle button
  */
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const theme = useMantineTheme();
 
   const handleSignOut = async () => {
     try {
@@ -63,8 +53,8 @@ export default function Navigation() {
       <div
         style={{
           height: '100%',
-          background: GRADIENTS.primary,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          background: `linear-gradient(135deg, ${theme.colors.accent1[7]} 0%, ${theme.colors.tertiary[6]} 100%)`,
+          boxShadow: theme.shadows.lg,
           position: 'relative',
         }}
       >
@@ -76,42 +66,43 @@ export default function Navigation() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: GRADIENTS.headerOverlay,
+            background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 50%, rgba(255,255,255,0.05) 100%)',
             pointerEvents: 'none',
           }}
         />
         
-        <Group h="100%" px="md" justify="space-between" style={{ position: 'relative', zIndex: 1 }}>
+        <Group h="100%" px={theme.spacing.md} justify="space-between" style={{ position: 'relative', zIndex: 1 }}>
           {/* Logo and Burger Menu */}
-          <Group gap="md">
+          <Group gap={theme.spacing.md}>
             {user && (
               <Burger
                 opened={drawerOpened}
                 onClick={toggleDrawer}
                 hiddenFrom="md"
                 size="md"
-                color="white"
+                color={theme.colors.primary[0]}
               />
             )}
             <Link href="/" style={{ textDecoration: 'none' }}>
-              <Group gap="sm">
+              <Group gap={theme.spacing.sm}>
                 <div
                   style={{
-                    ...BACKGROUNDS.frostedGlass,
-                    borderRadius: '12px',
-                    padding: '8px',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: theme.radius.lg,
+                    padding: theme.spacing.sm,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <IconVinyl size={28} color="white" />
+                  <IconVinyl size={28} color={theme.colors.primary[0]} />
                 </div>
                 <div>
                   <Text 
                     size="xl" 
                     fw={700}
-                    c="white"
+                    c={theme.colors.primary[0]}
                     style={{
                       letterSpacing: '0.5px',
                       lineHeight: 1,
@@ -119,7 +110,14 @@ export default function Navigation() {
                   >
                     Music Player
                   </Text>
-                  <Text size="xs" c="silver.4" style={{ lineHeight: 1, marginTop: 2 }}>
+                  <Text 
+                    size="xs" 
+                    c={theme.colors.primary[2]} 
+                    style={{ 
+                      lineHeight: 1, 
+                      marginTop: theme.spacing.xs 
+                    }}
+                  >
                     Your Personal Library
                   </Text>
                 </div>
@@ -129,7 +127,7 @@ export default function Navigation() {
 
           {/* Desktop Navigation Links */}
           {user && (
-            <Group gap="xs" visibleFrom="md">
+            <Group gap={theme.spacing.xs} visibleFrom="md">
               <Button
                 variant="subtle"
                 leftSection={<IconMusic size={18} />}
@@ -138,12 +136,16 @@ export default function Navigation() {
                 radius="md"
                 styles={{
                   root: {
-                    color: 'white',
+                    color: theme.colors.primary[0],
                     fontWeight: 500,
-                    transition: 'all 0.2s ease',
+                    transition: 'all 150ms ease',
                     position: 'relative',
-                    borderBottom: isActive('/library') ? '2px solid white' : '2px solid transparent',
-                    borderRadius: isActive('/library') ? '8px 8px 0 0' : '8px',
+                    borderBottom: isActive('/library') 
+                      ? `2px solid ${theme.colors.primary[0]}` 
+                      : '2px solid transparent',
+                    borderRadius: isActive('/library') 
+                      ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                      : theme.radius.md,
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.15)',
                     },
@@ -160,12 +162,16 @@ export default function Navigation() {
                 radius="md"
                 styles={{
                   root: {
-                    color: 'white',
+                    color: theme.colors.primary[0],
                     fontWeight: 500,
-                    transition: 'all 0.2s ease',
+                    transition: 'all 150ms ease',
                     position: 'relative',
-                    borderBottom: isActive('/playlists') ? '2px solid white' : '2px solid transparent',
-                    borderRadius: isActive('/playlists') ? '8px 8px 0 0' : '8px',
+                    borderBottom: isActive('/playlists') 
+                      ? `2px solid ${theme.colors.primary[0]}` 
+                      : '2px solid transparent',
+                    borderRadius: isActive('/playlists') 
+                      ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                      : theme.radius.md,
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.15)',
                     },
@@ -177,35 +183,8 @@ export default function Navigation() {
             </Group>
           )}
 
-          {/* Right Side: Dark Mode Toggle and User Menu */}
-          <Group gap="xs">
-            {/* Dark Mode Toggle */}
-            <ActionIcon
-              onClick={() => toggleColorScheme()}
-              variant="subtle"
-              size={40}
-              radius="md"
-              aria-label="Toggle color scheme"
-              color="gray"
-              styles={{
-                root: {
-                  color: 'white',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                    transform: 'rotate(180deg)',
-                  },
-                },
-              }}
-            >
-              {mounted && (colorScheme === 'dark' ? (
-                <IconSun size={18} />
-              ) : (
-                <IconMoon size={18} />
-              ))}
-            </ActionIcon>
-
-            {/* User Menu or Auth Buttons */}
+          {/* Right Side: User Menu or Auth Buttons */}
+          <Group gap={theme.spacing.xs}>
             {user ? (
               <Menu shadow="sm" width={180} position="bottom-end" offset={4}>
                 <Menu.Target>
@@ -216,8 +195,8 @@ export default function Navigation() {
                     aria-label="User menu"
                     styles={{
                       root: {
-                        color: 'white',
-                        transition: 'all 0.2s ease',
+                        color: theme.colors.primary[0],
+                        transition: 'all 150ms ease',
                         '&:hover': {
                           backgroundColor: 'rgba(255, 255, 255, 0.15)',
                         },
@@ -228,15 +207,15 @@ export default function Navigation() {
                   </ActionIcon>
                 </Menu.Target>
 
-                <Menu.Dropdown p={4}>
-                  <Menu.Label style={{ fontSize: '11px', padding: '4px 8px' }}>
+                <Menu.Dropdown p={theme.spacing.xs}>
+                  <Menu.Label style={{ fontSize: '11px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}>
                     {user.email}
                   </Menu.Label>
-                  <Menu.Divider my={4} />
+                  <Menu.Divider my={theme.spacing.xs} />
                   <Menu.Item
                     leftSection={<IconSettings size={14} />}
                     onClick={() => router.push('/settings')}
-                    style={{ fontSize: '13px', padding: '6px 8px' }}
+                    style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                   >
                     Settings
                   </Menu.Item>
@@ -244,14 +223,14 @@ export default function Navigation() {
                     color="red"
                     leftSection={<IconLogout size={14} />}
                     onClick={handleSignOut}
-                    style={{ fontSize: '13px', padding: '6px 8px' }}
+                    style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                   >
                     Logout
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             ) : (
-              <Group gap="xs">
+              <Group gap={theme.spacing.xs}>
                 <Button 
                   variant="subtle" 
                   onClick={() => router.push('/login')}
@@ -259,9 +238,9 @@ export default function Navigation() {
                   radius="md"
                   styles={{
                     root: {
-                      color: 'white',
+                      color: theme.colors.primary[0],
                       fontWeight: 500,
-                      transition: 'all 0.2s ease',
+                      transition: 'all 150ms ease',
                       '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
                       },
@@ -277,13 +256,13 @@ export default function Navigation() {
                   radius="md"
                   styles={{
                     root: {
-                      background: 'white',
-                      color: COLORS.deepBlue.primary,
+                      background: theme.colors.primary[0],
+                      color: theme.colors.accent1[7],
                       fontWeight: 600,
-                      transition: 'all 0.2s ease',
+                      transition: 'all 150ms ease',
                       '&:hover': {
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        boxShadow: '0 2px 8px rgba(255, 255, 255, 0.3)',
+                        background: theme.colors.primary[1],
+                        boxShadow: theme.shadows.sm,
                       },
                     },
                   }}
@@ -303,18 +282,18 @@ export default function Navigation() {
         size="xs"
         padding="md"
         title={
-          <Group gap="sm">
+          <Group gap={theme.spacing.sm}>
             <div
               style={{
-                background: GRADIENTS.primary,
-                borderRadius: '8px',
-                padding: '6px',
+                background: `linear-gradient(135deg, ${theme.colors.accent1[7]} 0%, ${theme.colors.tertiary[6]} 100%)`,
+                borderRadius: theme.radius.md,
+                padding: theme.spacing.xs,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <IconVinyl size={20} color="white" />
+              <IconVinyl size={20} color={theme.colors.primary[0]} />
             </div>
             <Text fw={700}>Menu</Text>
           </Group>
@@ -331,8 +310,8 @@ export default function Navigation() {
             closeDrawer();
           }}
           style={{
-            borderRadius: '8px',
-            marginBottom: '8px',
+            borderRadius: theme.radius.md,
+            marginBottom: theme.spacing.sm,
           }}
         />
         <NavLink
@@ -345,11 +324,11 @@ export default function Navigation() {
             closeDrawer();
           }}
           style={{
-            borderRadius: '8px',
-            marginBottom: '8px',
+            borderRadius: theme.radius.md,
+            marginBottom: theme.spacing.sm,
           }}
         />
-        <Divider my="md" />
+        <Divider my={theme.spacing.md} />
         {user && (
           <>
             <NavLink
@@ -361,8 +340,8 @@ export default function Navigation() {
                 closeDrawer();
               }}
               style={{
-                borderRadius: '8px',
-                marginBottom: '8px',
+                borderRadius: theme.radius.md,
+                marginBottom: theme.spacing.sm,
               }}
             />
             <NavLink
@@ -372,7 +351,7 @@ export default function Navigation() {
               onClick={handleSignOut}
               color="red"
               style={{
-                borderRadius: '8px',
+                borderRadius: theme.radius.md,
               }}
             />
           </>

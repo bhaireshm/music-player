@@ -167,20 +167,7 @@ export default function UploadModal({
     <Modal
       opened={opened}
       onClose={handleClose}
-      title={
-        <Text 
-          fw={700} 
-          size="lg"
-          style={{
-            background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          Upload Song
-        </Text>
-      }
+      title="Upload Song"
       size="md"
       centered
       closeOnClickOutside={!isUploading}
@@ -237,9 +224,7 @@ export default function UploadModal({
               <Progress 
                 value={uploadProgress} 
                 animated 
-                color="blue"
                 size="md"
-                radius="md"
               />
             </Stack>
           )}
@@ -251,7 +236,6 @@ export default function UploadModal({
               title="Error"
               color="red"
               variant="light"
-              radius="md"
             >
               {error}
             </Alert>
@@ -264,7 +248,6 @@ export default function UploadModal({
               title="Success"
               color="green"
               variant="light"
-              radius="md"
             >
               Song uploaded successfully!
             </Alert>
@@ -277,10 +260,7 @@ export default function UploadModal({
             loading={isUploading}
             fullWidth
             leftSection={<IconUpload size={18} />}
-            variant="gradient"
-            gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
             size="md"
-            radius="md"
           >
             {isUploading ? 'Uploading...' : 'Upload Song'}
           </Button>

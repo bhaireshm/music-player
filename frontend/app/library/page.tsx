@@ -20,6 +20,8 @@ import {
   Box,
   Group,
   Skeleton,
+  useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconPlayerPlay,
@@ -31,7 +33,6 @@ import {
   IconAlertCircle,
 } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
-import { GRADIENTS, BORDERS } from '@/lib/theme-constants';
 
 function LibraryPageContent() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -41,6 +42,8 @@ function LibraryPageContent() {
   const [isMounted, setIsMounted] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
   const router = useRouter();
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -103,9 +106,9 @@ function LibraryPageContent() {
           mb="xl"
           p="xl"
           style={{
-            background: GRADIENTS.pastelBlue,
-            borderRadius: 'var(--mantine-radius-md)',
-            boxShadow: '0 4px 20px rgba(1, 31, 75, 0.08)',
+            background: `linear-gradient(135deg, ${theme.colors.secondary[1]} 0%, ${theme.colors.accent2[1]} 100%)`,
+            borderRadius: theme.radius.md,
+            boxShadow: theme.shadows.md,
           }}
         >
           <Group justify="space-between" align="center">
@@ -113,7 +116,7 @@ function LibraryPageContent() {
               <Title 
                 order={1}
                 style={{
-                  background: GRADIENTS.primary,
+                  background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -130,7 +133,7 @@ function LibraryPageContent() {
               leftSection={<IconUpload size={18} />}
               onClick={() => setShowUploadModal(true)}
               variant="gradient"
-              gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+              gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
               size="md"
             >
               Upload Song
@@ -140,11 +143,11 @@ function LibraryPageContent() {
 
         {/* Loading State */}
         {loading && (
-          <Stack gap="md">
-            <Skeleton height={50} radius="md" />
-            <Skeleton height={50} radius="md" />
-            <Skeleton height={50} radius="md" />
-            <Skeleton height={50} radius="md" />
+          <Stack gap={theme.spacing.md}>
+            <Skeleton height={50} radius={theme.radius.md} />
+            <Skeleton height={50} radius={theme.radius.md} />
+            <Skeleton height={50} radius={theme.radius.md} />
+            <Skeleton height={50} radius={theme.radius.md} />
           </Stack>
         )}
 
@@ -170,22 +173,22 @@ function LibraryPageContent() {
           <Box
             p="xl"
             style={{
-              background: GRADIENTS.pastelPink,
-              borderRadius: 'var(--mantine-radius-md)',
+              background: `linear-gradient(135deg, ${theme.colors.accent2[1]} 0%, ${theme.colors.secondary[1]} 100%)`,
+              borderRadius: theme.radius.md,
             }}
           >
-            <Stack align="center" gap="md" py={60}>
+            <Stack align="center" gap={theme.spacing.md} py={60}>
               <Box
                 style={{
-                  background: GRADIENTS.pinkAccent,
+                  background: `linear-gradient(135deg, ${theme.colors.accent2[6]} 0%, ${theme.colors.accent2[7]} 100%)`,
                   borderRadius: '50%',
-                  padding: '20px',
+                  padding: theme.spacing.lg,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <IconMusic size={48} stroke={1.5} color="white" />
+                <IconMusic size={48} stroke={1.5} color={theme.colors.primary[0]} />
               </Box>
               <Title order={3}>
                 No songs yet
@@ -197,7 +200,7 @@ function LibraryPageContent() {
                 leftSection={<IconUpload size={18} />}
                 onClick={() => setShowUploadModal(true)}
                 variant="gradient"
-                gradient={{ from: 'pink.6', to: 'red.6', deg: 135 }}
+                gradient={{ from: 'accent2.6', to: 'accent2.7', deg: 135 }}
                 size="md"
               >
                 Upload Your First Song
@@ -225,7 +228,7 @@ function LibraryPageContent() {
                       key={song.id}
                       bg={
                         audioCurrentSong?.id === song.id
-                          ? 'var(--mantine-color-blue-light)'
+                          ? (colorScheme === 'dark' ? theme.colors.accent1[9] : theme.colors.accent1[1])
                           : undefined
                       }
                     >
@@ -268,7 +271,7 @@ function LibraryPageContent() {
                               <Menu.Item
                                 leftSection={<IconPlayerPlay size={14} />}
                                 onClick={() => handlePlaySong(song, index)}
-                                style={{ fontSize: '13px', padding: '6px 8px' }}
+                                style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                               >
                                 Play
                               </Menu.Item>
@@ -281,7 +284,7 @@ function LibraryPageContent() {
                                 <Menu.Target>
                                   <Menu.Item 
                                     leftSection={<IconPlaylistAdd size={14} />}
-                                    style={{ fontSize: '13px', padding: '6px 8px' }}
+                                    style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                                   >
                                     Add to Playlist
                                   </Menu.Item>
@@ -294,7 +297,7 @@ function LibraryPageContent() {
                               <Menu.Item
                                 leftSection={<IconInfoCircle size={14} />}
                                 onClick={() => handleSongDetails(song.id)}
-                                style={{ fontSize: '13px', padding: '6px 8px' }}
+                                style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                               >
                                 Details
                               </Menu.Item>
@@ -317,13 +320,13 @@ function LibraryPageContent() {
                   style={{
                     background:
                       audioCurrentSong?.id === song.id
-                        ? GRADIENTS.pastelLight
-                        : GRADIENTS.subtleGray,
-                    borderRadius: 'var(--mantine-radius-md)',
+                        ? `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`
+                        : (colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.secondary[0]),
+                    borderRadius: theme.radius.md,
                     border: audioCurrentSong?.id === song.id 
-                      ? `1px solid ${BORDERS.activeBlue}` 
-                      : `1px solid ${BORDERS.light}`,
-                    transition: 'all 0.2s ease',
+                      ? `1px solid ${theme.colors.accent1[4]}` 
+                      : `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+                    transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
                   }}
                 >
                   <Group justify="space-between" wrap="nowrap">
@@ -362,7 +365,7 @@ function LibraryPageContent() {
                           <Menu.Item
                             leftSection={<IconPlayerPlay size={14} />}
                             onClick={() => handlePlaySong(song, index)}
-                            style={{ fontSize: '13px', padding: '6px 8px' }}
+                            style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                           >
                             Play
                           </Menu.Item>
@@ -375,7 +378,7 @@ function LibraryPageContent() {
                             <Menu.Target>
                               <Menu.Item 
                                 leftSection={<IconPlaylistAdd size={14} />}
-                                style={{ fontSize: '13px', padding: '6px 8px' }}
+                                style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                               >
                                 Add to Playlist
                               </Menu.Item>
@@ -388,7 +391,7 @@ function LibraryPageContent() {
                           <Menu.Item
                             leftSection={<IconInfoCircle size={14} />}
                             onClick={() => handleSongDetails(song.id)}
-                            style={{ fontSize: '13px', padding: '6px 8px' }}
+                            style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                           >
                             Details
                           </Menu.Item>
