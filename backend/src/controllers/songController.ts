@@ -117,6 +117,43 @@ export async function uploadSong(
 }
 
 /**
+ * Get all songs
+ * GET /songs
+ */
+export async function getAllSongs(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    // Fetch all songs from database
+    const songs = await Song.find().sort({ createdAt: -1 });
+
+    // Return songs array
+    res.status(200).json({
+      songs: songs.map((song) => ({
+        id: song._id,
+        title: song.title,
+        artist: song.artist,
+        mimeType: song.mimeType,
+        createdAt: song.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error('Get songs error:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    res.status(500).json({
+      error: {
+        code: 'FETCH_FAILED',
+        message: 'Failed to fetch songs',
+        details: errorMessage,
+      },
+    });
+  }
+}
+
+/**
  * Stream a song by ID
  * GET /songs/:id
  */

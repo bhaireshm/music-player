@@ -34,6 +34,60 @@ export async function getPlaylists(
 }
 
 /**
+ * GET /playlists/:id
+ * Fetch a single playlist with populated songs
+ */
+export async function getPlaylist(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const userId = req.userId;
+    const playlistId = req.params.id;
+
+    // Validate playlist ID
+    if (!Types.ObjectId.isValid(playlistId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_PLAYLIST_ID',
+          message: 'Invalid playlist ID format',
+        },
+      });
+      return;
+    }
+
+    // Find playlist and populate song metadata
+    const playlist = await Playlist.findOne({
+      _id: playlistId,
+      userId,
+    })
+      .populate('songIds', 'title artist mimeType createdAt')
+      .exec();
+
+    if (!playlist) {
+      res.status(404).json({
+        error: {
+          code: 'INVALID_PLAYLIST_ID',
+          message: 'Playlist not found or access denied',
+        },
+      });
+      return;
+    }
+
+    res.status(200).json(playlist);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      error: {
+        code: 'DATABASE_ERROR',
+        message: 'Failed to fetch playlist',
+        details: errorMessage,
+      },
+    });
+  }
+}
+
+/**
  * POST /playlists
  * Create a new playlist for the authenticated user
  */

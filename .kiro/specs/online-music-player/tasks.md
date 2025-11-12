@@ -180,8 +180,6 @@ s: All requirements_
 
 - [x] 11.1 Write backend integration tests documentation
 
-
-
   - Create document file saying how to test/use the below mentioned.
   - Doc to Test song upload flow with duplicate detection
   - Doc to Test song streaming with range requests
@@ -241,10 +239,7 @@ s: All requirements_
     - Redirect to library on success
     - _Requirements: 1.1_
 
-
-- [-] 17. Implement audio player component
-
-
+- [x] 17. Implement audio player component
 
   - Create AudioPlayer component with HTML5 audio element
   - Implement play, pause, and seek controls
@@ -254,7 +249,7 @@ s: All requirements_
   - Set audio source to backend streaming endpoint with song ID
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 18. Build song upload component
+- [x] 18. Build song upload component
 
   - Create UploadForm component with file input and metadata fields
   - Validate file type (audio formats only)
@@ -264,7 +259,7 @@ s: All requirements_
   - Refresh song library on successful upload
   - _Requirements: 2.1, 3.1, 8.4_
 
-- [ ] 19. Create song library page
+- [x] 19. Create song library page
 
   - Build library page to display all uploaded songs
   - Fetch songs from backend on page load
@@ -272,16 +267,19 @@ s: All requirements_
   - Integrate with AudioPlayer component to play selected song
   - Include UploadForm component for adding new songs
   - _Requirements: 3.1, 3.2, 3.3, 7.2_
+-
 
 - [ ] 20. Implement playlist management components
 
-  - [ ] 20.1 Create PlaylistManager component
+  - [x] 20.1 Create PlaylistManager component
+
     - Display list of user's playlists
     - Provide create playlist button and form
     - Provide delete playlist button for each playlist
     - Call backend playlist endpoints
-    - _Requirements: 5.1, 5.2, 5.3_
-  - [ ] 20.2 Create playlist detail page
+    --_Requirements: 5.1, 5.2, 5.3_
+
+  - [x] 20.2 Create playlist detail page
 
     - Display playlist name and song list
     - Provide add song button with song selector
@@ -289,8 +287,9 @@ s: All requirements_
     - Integrate with AudioPlayer to play songs from playlist
     - Call backend playlist update endpoint
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
+-
 
-- [ ] 21. Build main application layout
+- [x] 21. Build main application layout
 
   - Create root layout with navigation bar
   - Add links to library and playlists pages

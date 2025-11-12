@@ -32,7 +32,7 @@ export interface Playlist {
   id: string;
   name: string;
   userId: string;
-  songIds: string[];
+  songIds: string[] | Song[];
   createdAt: string;
   updatedAt: string;
 }
@@ -209,8 +209,15 @@ export async function getSongs(): Promise<Song[]> {
  */
 export async function getPlaylists(): Promise<Playlist[]> {
   const response = await makeAuthenticatedRequest('/playlists');
-  const data = await parseResponse<{ playlists: Playlist[] }>(response);
-  return data.playlists;
+  return parseResponse<Playlist[]>(response);
+}
+
+/**
+ * Get a single playlist by ID with populated songs
+ */
+export async function getPlaylist(playlistId: string): Promise<Playlist> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}`);
+  return parseResponse<Playlist>(response);
 }
 
 /**
