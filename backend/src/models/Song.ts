@@ -3,6 +3,9 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface ISong extends Document {
   title: string;
   artist: string;
+  album?: string;
+  year?: number;
+  genre?: string[];
   fileKey: string;
   mimeType: string;
   uploadedBy: Types.ObjectId;
@@ -18,6 +21,18 @@ const songSchema = new Schema<ISong>({
   artist: {
     type: String,
     required: true,
+  },
+  album: {
+    type: String,
+    required: false,
+  },
+  year: {
+    type: Number,
+    required: false,
+  },
+  genre: {
+    type: [String],
+    required: false,
   },
   fileKey: {
     type: String,

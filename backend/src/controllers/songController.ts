@@ -1,11 +1,41 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { generateFingerprint, checkDuplicate } from '../services/fingerprintService';
+import { generateFingerprint, checkDuplicate, FingerprintResult } from '../services/fingerprintService';
 import { uploadFile, getFile } from '../services/storageService';
 import { Song } from '../models/Song';
 import { randomUUID } from 'crypto';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { r2Client, bucketName } from '../config/storage';
+import { extractMetadata, AudioMetadata } from '../services/metadataService';
+
+/**
+ * Merge extracted metadata with user-provided metadata
+ * User-provided values take priority over extracted values
+ * @param extracted - Metadata extracted from audio file
+ * @param userProvided - Metadata provided by user in request body
+ * @param filename - Original filename for fallback title
+ * @returns Merged metadata object
+ */
+function mergeMetadata(
+  extracted: AudioMetadata,
+  userProvided: { title?: string; artist?: string; album?: string; year?: number; genre?: string[] },
+  filename: string
+): { title: string; artist: string; album?: string; year?: number; genre?: string[] } {
+  // User-provided values take priority, then extracted values, then fallbacks
+  const title = userProvided.title || extracted.title || filename.replace(/\.[^/.]+$/, '') || 'Unknown Title';
+  const artist = userProvided.artist || extracted.artist || 'Unknown Artist';
+  const album = userProvided.album || extracted.album;
+  const year = userProvided.year || extracted.year;
+  const genre = userProvided.genre || extracted.genre;
+
+  return {
+    title,
+    artist,
+    ...(album && { album }),
+    ...(year && { year }),
+    ...(genre && { genre }),
+  };
+}
 
 /**
  * Handle song upload
@@ -27,11 +57,30 @@ export async function uploadSong(
       return;
     }
 
-    // Extract metadata from request body
-    const { title, artist } = req.body;
+    // Get file buffer and MIME type
+    const fileBuffer = req.file.buffer;
+    const mimeType = req.file.mimetype;
+    const filename = req.file.originalname;
 
-    // Validate required metadata
-    if (!title || !artist) {
+    // Extract metadata from audio file
+    console.log('Extracting metadata from audio file...');
+    const extractedMetadata = await extractMetadata(fileBuffer);
+
+    // Extract user-provided metadata from request body
+    const { title, artist, album, year, genre } = req.body;
+    const userProvidedMetadata = {
+      title,
+      artist,
+      album,
+      year: year ? parseInt(year, 10) : undefined,
+      genre: genre ? (Array.isArray(genre) ? genre : [genre]) : undefined,
+    };
+
+    // Merge extracted and user-provided metadata
+    const mergedMetadata = mergeMetadata(extractedMetadata, userProvidedMetadata, filename);
+
+    // Validate that title and artist are present after merging
+    if (!mergedMetadata.title || !mergedMetadata.artist) {
       res.status(400).json({
         error: {
           code: 'MISSING_METADATA',
@@ -41,17 +90,13 @@ export async function uploadSong(
       return;
     }
 
-    // Get file buffer and MIME type
-    const fileBuffer = req.file.buffer;
-    const mimeType = req.file.mimetype;
-
     // Generate audio fingerprint
     console.log('Generating fingerprint for uploaded audio...');
-    const fingerprint = await generateFingerprint(fileBuffer);
-    console.log('Fingerprint generated:', fingerprint);
+    const fingerprintResult: FingerprintResult = await generateFingerprint(fileBuffer);
+    console.log(`Fingerprint generated using ${fingerprintResult.method} method:`, fingerprintResult.fingerprint);
 
     // Check for duplicate fingerprint
-    const duplicate = await checkDuplicate(fingerprint);
+    const duplicate = await checkDuplicate(fingerprintResult.fingerprint);
     if (duplicate) {
       res.status(409).json({
         error: {
@@ -70,7 +115,7 @@ export async function uploadSong(
     }
 
     // Generate unique file key for R2 storage
-    const fileExtension = req.file.originalname.split('.').pop() || 'mp3';
+    const fileExtension = filename.split('.').pop() || 'mp3';
     const fileKey = `songs/${randomUUID()}.${fileExtension}`;
 
     // Upload file to R2
@@ -80,25 +125,35 @@ export async function uploadSong(
 
     // Save song metadata to database
     const song = new Song({
-      title,
-      artist,
+      title: mergedMetadata.title,
+      artist: mergedMetadata.artist,
+      album: mergedMetadata.album,
+      year: mergedMetadata.year,
+      genre: mergedMetadata.genre,
       fileKey,
       mimeType,
       uploadedBy: req.userId,
-      fingerprint,
+      fingerprint: fingerprintResult.fingerprint,
     });
 
     await song.save();
     console.log('Song metadata saved to database');
 
-    // Return created song object
+    // Return created song object with extracted/merged metadata
     res.status(201).json({
       song: {
         id: song._id,
         title: song.title,
         artist: song.artist,
+        album: song.album,
+        year: song.year,
+        genre: song.genre,
         mimeType: song.mimeType,
         createdAt: song.createdAt,
+      },
+      metadata: {
+        extracted: extractedMetadata,
+        merged: mergedMetadata,
       },
     });
   } catch (error) {
