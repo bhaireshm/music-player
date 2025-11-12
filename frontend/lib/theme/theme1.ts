@@ -8,56 +8,54 @@ import { animations } from './animations';
 
 /**
  * Theme 1 - Light Mode
- * Primary: Near white (#fffefe)
- * Secondary: Light purple-gray (#dbd8e0)
- * Tertiary: Dark brown-black (#181413)
- * Accent 1: Dark blue-gray (#36444f)
- * Accent 2: Bright pink (#f966b8)
- * Accent 3: Light blue (#aadcf1)
+ * Primary: Mint green (#a0f2c9)
+ * Secondary: Sage green (#647d70)
+ * Tertiary: Golden yellow (#eac749)
+ * Accent: Dusty rose (#36444f)
  */
 export const theme1LightPalette: ThemePalette = {
   id: 'theme1',
   name: 'Theme 1',
   colors: {
-    primary: '#fffefe',
-    secondary: '#dbd8e0',
-    tertiary: '#181413',
+    primary: '#a0f2c9',
+    secondary: '#647d70',
+    tertiary: '#eac749',
     accent1: '#36444f',
-    accent2: '#f966b8',
-    accent3: '#aadcf1',
+    accent2: '#36444f',
+    accent3: '#36444f',
   },
   mantineColors: {
-    primary: generateColorScale('#fffefe'),
-    secondary: generateColorScale('#dbd8e0'),
-    tertiary: generateColorScale('#181413'),
+    primary: generateColorScale('#a0f2c9'),
+    secondary: generateColorScale('#647d70'),
+    tertiary: generateColorScale('#eac749'),
     accent1: generateColorScale('#36444f'),
-    accent2: generateColorScale('#f966b8'),
-    accent3: generateColorScale('#aadcf1'),
+    accent2: generateColorScale('#36444f'),
+    accent3: generateColorScale('#36444f'),
   },
 };
 
 /**
  * Theme 1 - Dark Mode
- * Inverted colors for dark mode with appropriate adjustments
+ * Same colors as light mode for consistency
  */
 export const theme1DarkPalette: ThemePalette = {
   id: 'theme1',
   name: 'Theme 1 Dark',
   colors: {
-    primary: '#181413',    // Inverted from tertiary
-    secondary: '#36444f',  // Darker variant
-    tertiary: '#fffefe',   // Inverted from primary
-    accent1: '#aadcf1',    // Lighter for dark background
-    accent2: '#f966b8',    // Keep vibrant
-    accent3: '#dbd8e0',    // Lighter variant
+    primary: '#a0f2c9',
+    secondary: '#647d70',
+    tertiary: '#eac749',
+    accent1: '#36444f',
+    accent2: '#36444f',
+    accent3: '#36444f',
   },
   mantineColors: {
-    primary: generateColorScale('#181413'),
-    secondary: generateColorScale('#36444f'),
-    tertiary: generateColorScale('#fffefe'),
-    accent1: generateColorScale('#aadcf1'),
-    accent2: generateColorScale('#f966b8'),
-    accent3: generateColorScale('#dbd8e0'),
+    primary: generateColorScale('#a0f2c9'),
+    secondary: generateColorScale('#647d70'),
+    tertiary: generateColorScale('#eac749'),
+    accent1: generateColorScale('#36444f'),
+    accent2: generateColorScale('#36444f'),
+    accent3: generateColorScale('#36444f'),
   },
 };
 

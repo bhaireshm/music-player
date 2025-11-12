@@ -48,12 +48,13 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
     previous,
   } = useAudioPlayerContext();
 
-  // Use theme1 light colors
-  const textColor = theme.colors.tertiary[9];
-  const borderColor = theme.colors.secondary[3];
-  const hoverBg = theme.colors.secondary[1];
-  const hoverBorder = theme.colors.secondary[4];
-  const trackBg = theme.colors.secondary[2];
+  // Enhanced colors for better visibility
+  const textColor = theme.colors.primary[9];
+  const borderColor = theme.colors.accent1[4];
+  const hoverBg = theme.colors.accent1[1];
+  const hoverBorder = theme.colors.accent1[5];
+  const trackBg = theme.colors.accent1[2];
+  const playerBg = `linear-gradient(135deg, ${theme.colors.primary[0]} 0%, ${theme.colors.accent2[0]} 100%)`;
 
 
 
@@ -100,17 +101,17 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
           left: 0,
           right: 0,
           height: 64,
-          background: theme.colors.primary[0],
+          background: playerBg,
           backdropFilter: 'blur(20px)',
-          borderTop: `1px solid ${theme.colors.secondary[3]}`,
+          borderTop: `2px solid ${theme.colors.accent1[3]}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
-          boxShadow: theme.shadows.sm,
+          boxShadow: theme.shadows.md,
         }}
       >
-        <Text c="dimmed" size="sm">
+        <Text c="dimmed" size="sm" fw={500}>
           No song playing
         </Text>
       </Box>
@@ -125,12 +126,12 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         left: 0,
         right: 0,
         height: 64,
-        background: theme.colors.primary[0],
+        background: playerBg,
         backdropFilter: 'blur(20px)',
-        borderTop: `1px solid ${theme.colors.secondary[3]}`,
+        borderTop: `2px solid ${theme.colors.accent1[3]}`,
         padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
         zIndex: 100,
-        boxShadow: theme.shadows.sm,
+        boxShadow: theme.shadows.md,
       }}
     >
       {/* Desktop Layout */}
@@ -187,7 +188,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
           <Group gap="xs" justify="center" mb={4}>
             <ActionIcon
               variant="light"
-              color="gray"
+              color="accent1"
               size={32}
               radius="md"
               onClick={previous}
@@ -204,7 +205,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
                 },
               }}
             >
-              <IconPlayerSkipBack size={16} stroke={2} />
+              <IconPlayerSkipBack size={16} stroke={2.5} />
             </ActionIcon>
 
             <ActionIcon
@@ -236,7 +237,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
             <ActionIcon
               variant="light"
-              color="gray"
+              color="accent1"
               size={32}
               radius="md"
               onClick={next}
@@ -253,7 +254,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
                 },
               }}
             >
-              <IconPlayerSkipForward size={16} stroke={2} />
+              <IconPlayerSkipForward size={16} stroke={2.5} />
             </ActionIcon>
           </Group>
 
@@ -283,7 +284,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         <Group gap="xs" style={{ flex: '0 0 90px' }} justify="flex-end">
           <ActionIcon
             variant="light"
-            color="gray"
+            color="accent1"
             size={28}
             radius="md"
             onClick={() => setVolume(volume === 0 ? 1 : 0)}
@@ -369,7 +370,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         <Group gap={4}>
           <ActionIcon
             variant="light"
-            color="gray"
+            color="accent1"
             size={32}
             radius="md"
             onClick={previous}
@@ -385,7 +386,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               },
             }}
           >
-            <IconPlayerSkipBack size={14} stroke={2} />
+            <IconPlayerSkipBack size={14} stroke={2.5} />
           </ActionIcon>
 
           <ActionIcon
@@ -399,7 +400,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             aria-label={isPlaying ? 'Pause' : 'Play'}
             styles={{
               root: {
-                boxShadow: theme.shadows.sm,
+                boxShadow: theme.shadows.md,
                 transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
               },
             }}
@@ -413,7 +414,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
           <ActionIcon
             variant="light"
-            color="gray"
+            color="accent1"
             size={32}
             radius="md"
             onClick={next}
@@ -429,7 +430,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               },
             }}
           >
-            <IconPlayerSkipForward size={14} stroke={2} />
+            <IconPlayerSkipForward size={14} stroke={2.5} />
           </ActionIcon>
         </Group>
       </Group>

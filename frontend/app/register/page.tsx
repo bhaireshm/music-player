@@ -67,7 +67,7 @@ export default function RegisterPage() {
                 ta="center" 
                 mb={8}
                 style={{
-                  background: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+                  backgroundImage: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
