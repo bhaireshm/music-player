@@ -75,36 +75,42 @@
     - Include album, year, genre if available
     - Maintain existing response structure
     - _Requirements: 1.4_
+-
 
-- [ ] 5. Fix playlist API response formats
+- [x] 5. Fix playlist API response formats
 
-  - [ ] 5.1 Update createPlaylist response format
+  - [x] 5.1 Update createPlaylist response format
+
     - Modify response to wrap playlist in object: { playlist: playlistObject }
     - Ensure response matches frontend expectation
     - Test response structure
     - _Requirements: 6.2, 6.4_
   
-  - [ ] 5.2 Update updatePlaylist response format
+  - [x] 5.2 Update updatePlaylist response format
+
     - Modify response to wrap playlist in object: { playlist: playlistObject }
     - Ensure populated songs are included
     - Maintain consistency with createPlaylist format
     - _Requirements: 6.2, 6.4_
   
-  - [ ] 5.3 Verify getPlaylist and getPlaylists formats
+  - [x] 5.3 Verify getPlaylist and getPlaylists formats
+
     - Confirm getPlaylist returns direct Playlist object
     - Confirm getPlaylists returns Playlist array
     - Ensure no changes needed for these endpoints
     - _Requirements: 6.1, 6.3_
 
-- [ ] 6. Update error handling and logging
+- [x] 6. Update error handling and logging
 
-  - [ ] 6.1 Add structured logging for metadata extraction
+  - [x] 6.1 Add structured logging for metadata extraction
+
     - Log when metadata extraction succeeds with field count
     - Log warnings when metadata is missing
     - Log errors with stack traces for debugging
     - _Requirements: 5.1, 5.4_
   
-  - [ ] 6.2 Add structured logging for fingerprint fallback
+  - [x] 6.2 Add structured logging for fingerprint fallback
+
     - Log info message when using acoustic fingerprint
     - Log warning when falling back to file hash
     - Include reason for fallback in log message

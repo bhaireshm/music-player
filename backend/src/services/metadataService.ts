@@ -34,16 +34,35 @@ export async function extractMetadata(fileBuffer: Buffer): Promise<AudioMetadata
       duration: metadata.format.duration,
     };
     
-    console.log('Metadata extracted successfully:', {
-      title: audioMetadata.title || 'N/A',
-      artist: audioMetadata.artist || 'N/A',
-      fieldsFound: Object.values(audioMetadata).filter(v => v !== undefined).length,
+    // Count fields that were successfully extracted
+    const fieldCount = Object.values(audioMetadata).filter(v => v !== undefined).length;
+    
+    // Log success with field count
+    console.log('Metadata extraction succeeded:', {
+      fieldsExtracted: fieldCount,
+      title: audioMetadata.title || 'missing',
+      artist: audioMetadata.artist || 'missing',
+      album: audioMetadata.album || 'missing',
+      year: audioMetadata.year || 'missing',
+      genre: audioMetadata.genre ? audioMetadata.genre.join(', ') : 'missing',
+      duration: audioMetadata.duration ? `${audioMetadata.duration.toFixed(2)}s` : 'missing',
     });
+    
+    // Log warnings for missing critical metadata
+    if (!audioMetadata.title) {
+      console.warn('Metadata extraction warning: Title field is missing from audio file');
+    }
+    if (!audioMetadata.artist) {
+      console.warn('Metadata extraction warning: Artist field is missing from audio file');
+    }
     
     return audioMetadata;
   } catch (error) {
-    console.error('Error extracting metadata:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    // Log error with stack trace for debugging
+    console.error('Metadata extraction failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     
     // Return empty object on failure (graceful degradation)
     return {};

@@ -119,7 +119,7 @@ export async function createPlaylist(
 
     await playlist.save();
 
-    res.status(201).json(playlist);
+    res.status(201).json({ playlist });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
@@ -218,7 +218,7 @@ export async function updatePlaylist(
     // Populate and return updated playlist
     await playlist.populate('songIds', 'title artist mimeType createdAt');
 
-    res.status(200).json(playlist);
+    res.status(200).json({ playlist });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({

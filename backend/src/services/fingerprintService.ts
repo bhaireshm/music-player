@@ -1,16 +1,34 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { createHash } from 'crypto';
 import { Song, ISong } from '../models/Song';
 
 const execAsync = promisify(exec);
 
 /**
- * Generate audio fingerprint using Chromaprint's fpcalc tool
- * @param fileBuffer - Audio file buffer
- * @returns Fingerprint hash string
- * @throws Error if fpcalc execution fails or fingerprint cannot be extracted
+ * Result of fingerprint generation including the method used
  */
-export async function generateFingerprint(fileBuffer: Buffer): Promise<string> {
+export interface FingerprintResult {
+  fingerprint: string;
+  method: 'acoustic' | 'hash';
+}
+
+/**
+ * Generate SHA-256 hash of file buffer as fallback fingerprint
+ * @param fileBuffer - Audio file buffer
+ * @returns Hash string prefixed with "HASH:"
+ */
+function generateFileHash(fileBuffer: Buffer): string {
+  const hash = createHash('sha256').update(fileBuffer).digest('hex');
+  return `HASH:${hash}`;
+}
+
+/**
+ * Generate audio fingerprint using Chromaprint's fpcalc tool with fallback to file hash
+ * @param fileBuffer - Audio file buffer
+ * @returns FingerprintResult containing fingerprint and method used
+ */
+export async function generateFingerprint(fileBuffer: Buffer): Promise<FingerprintResult> {
   try {
     // Write buffer to temporary file for fpcalc processing
     const fs = require('fs');
@@ -48,7 +66,16 @@ export async function generateFingerprint(fileBuffer: Buffer): Promise<string> {
         throw new Error('Extracted fingerprint is empty');
       }
       
-      return fingerprint;
+      // Log info message when using acoustic fingerprint
+      console.log('Fingerprint generated using acoustic method:', {
+        method: 'acoustic',
+        fingerprintLength: fingerprint.length,
+      });
+      
+      return {
+        fingerprint,
+        method: 'acoustic'
+      };
     } finally {
       // Clean up temporary file
       try {
@@ -58,10 +85,21 @@ export async function generateFingerprint(fileBuffer: Buffer): Promise<string> {
       }
     }
   } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Fingerprint generation failed: ${error.message}`);
-    }
-    throw new Error('Fingerprint generation failed: Unknown error');
+    // Fallback to file hash when fpcalc fails
+    const reason = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Log warning when falling back to file hash with reason
+    console.warn('Fingerprint generation falling back to file hash:', {
+      reason,
+      method: 'hash',
+      message: 'fpcalc acoustic fingerprinting failed or unavailable',
+    });
+    
+    const hashFingerprint = generateFileHash(fileBuffer);
+    return {
+      fingerprint: hashFingerprint,
+      method: 'hash'
+    };
   }
 }
 
