@@ -43,7 +43,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       const favoritesData = await getFavorites();
       
       // Extract song IDs from favorites
-      const songIds = new Set(favoritesData.favorites.map((fav: any) => fav.song.id));
+      const songIds = new Set<string>(favoritesData.favorites.map((fav: any) => fav.song.id as string));
       setFavorites(songIds);
     } catch (error) {
       // Silently fail if user is not authenticated

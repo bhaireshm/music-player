@@ -22,6 +22,8 @@ import {
   Skeleton,
   Modal,
   Paper,
+  useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconPlayerPlay,
@@ -49,6 +51,8 @@ function PlaylistDetailPageContent() {
   const [updating, setUpdating] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -202,10 +206,19 @@ function PlaylistDetailPageContent() {
     <Box pb={120}>
       <Container size="xl" py="xl">
         {/* Header */}
-        <Stack gap="md" mb="xl">
-          <Group>
+        <Box
+          mb="xl"
+          p="xl"
+          style={{
+            background: `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100())`,
+            borderRadius: theme.radius.md,
+            boxShadow: theme.shadows.md,
+          }}
+        >
+          <Group mb="md">
             <ActionIcon
-              variant="subtle"
+              variant="light"
+              color="accent1"
               size={44}
               onClick={() => router.push('/playlists')}
               aria-label="Back to playlists"
@@ -213,7 +226,18 @@ function PlaylistDetailPageContent() {
               <IconArrowLeft size={22} />
             </ActionIcon>
             <Box style={{ flex: 1 }}>
-              <Title order={1}>{playlist?.name || 'Loading...'}</Title>
+              <Title 
+                order={1}
+                style={{
+                  backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+                }}
+              >
+                {playlist?.name || 'Loading...'}
+              </Title>
               <Text c="dimmed" size="sm">
                 {playlistSongs.length} {playlistSongs.length === 1 ? 'song' : 'songs'}
               </Text>
@@ -226,11 +250,14 @@ function PlaylistDetailPageContent() {
               <Button
                 leftSection={<IconPlayerPlay size={18} />}
                 onClick={handlePlayAll}
+                variant="gradient"
+                gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
               >
                 Play All
               </Button>
               <Button
                 variant="light"
+                color="accent1"
                 leftSection={<IconPlus size={18} />}
                 onClick={() => setShowAddSongModal(true)}
                 disabled={updating || availableSongs.length === 0}
@@ -239,7 +266,7 @@ function PlaylistDetailPageContent() {
               </Button>
             </Group>
           )}
-        </Stack>
+        </Box>
 
         {/* Loading State */}
         {loading && (
@@ -270,23 +297,44 @@ function PlaylistDetailPageContent() {
 
         {/* Empty State */}
         {!loading && !error && playlistSongs.length === 0 && (
-          <Stack align="center" gap="md" py={60}>
-            <IconMusic size={48} stroke={1.5} color="var(--mantine-color-gray-5)" />
-            <Title order={3} c="dimmed">
-              No songs in playlist
-            </Title>
-            <Text c="dimmed" size="sm">
-              Add songs to start building your playlist.
-            </Text>
-            {availableSongs.length > 0 && (
-              <Button
-                leftSection={<IconPlus size={18} />}
-                onClick={() => setShowAddSongModal(true)}
+          <Box
+            p="xl"
+            style={{
+              background: `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100())`,
+              borderRadius: theme.radius.md,
+            }}
+          >
+            <Stack align="center" gap="md" py={60}>
+              <Box
+                style={{
+                  background: `linear-gradient(135deg, ${theme.colors.accent1[6]} 0%, ${theme.colors.accent1[7]} 100())`,
+                  borderRadius: '50%',
+                  padding: theme.spacing.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                Add Song
-              </Button>
-            )}
-          </Stack>
+                <IconMusic size={48} stroke={1.5} color={theme.colors.primary[0]} />
+              </Box>
+              <Title order={3}>
+                No songs in playlist
+              </Title>
+              <Text c="dimmed" size="sm" ta="center">
+                Add songs to start building your playlist.
+              </Text>
+              {availableSongs.length > 0 && (
+                <Button
+                  leftSection={<IconPlus size={18} />}
+                  onClick={() => setShowAddSongModal(true)}
+                  variant="gradient"
+                  gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
+                >
+                  Add Song
+                </Button>
+              )}
+            </Stack>
+          </Box>
         )}
 
         {/* Song List - Desktop Table */}
@@ -309,7 +357,7 @@ function PlaylistDetailPageContent() {
                       key={song.id}
                       bg={
                         audioCurrentSong?.id === song.id
-                          ? 'var(--mantine-color-blue-light)'
+                          ? (colorScheme === 'dark' ? theme.colors.accent1[9] : theme.colors.accent1[1])
                           : undefined
                       }
                     >
@@ -337,7 +385,7 @@ function PlaylistDetailPageContent() {
                         <Group gap="xs" wrap="nowrap">
                           <ActionIcon
                             variant={audioCurrentSong?.id === song.id ? 'filled' : 'subtle'}
-                            color="blue"
+                            color="accent1"
                             onClick={() => handlePlaySong(song, index)}
                             aria-label={`Play ${song.title}`}
                           >
@@ -407,12 +455,17 @@ function PlaylistDetailPageContent() {
                 <Paper
                   key={song.id}
                   p="md"
-                  withBorder
-                  bg={
-                    audioCurrentSong?.id === song.id
-                      ? 'var(--mantine-color-blue-light)'
-                      : undefined
-                  }
+                  style={{
+                    background:
+                      audioCurrentSong?.id === song.id
+                        ? `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`
+                        : (colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.secondary[0]),
+                    borderRadius: theme.radius.md,
+                    border: audioCurrentSong?.id === song.id 
+                      ? `1px solid ${theme.colors.accent1[4]}` 
+                      : `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+                    transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
+                  }}
                 >
                   <Group justify="space-between" wrap="nowrap" mb="xs">
                     <Text c="dimmed" size="xs">
@@ -421,7 +474,7 @@ function PlaylistDetailPageContent() {
                     <Group gap="xs" wrap="nowrap">
                       <ActionIcon
                         variant={audioCurrentSong?.id === song.id ? 'filled' : 'subtle'}
-                        color="blue"
+                        color="accent1"
                         size={44}
                         onClick={() => handlePlaySong(song, index)}
                         aria-label={`Play ${song.title}`}

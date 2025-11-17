@@ -147,7 +147,9 @@
     - Return updated playlist object
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ] 9.4 Create DELETE /playlists/:id endpoint
+  - [x] 9.4 Create DELETE /playlists/:id endpoint
+
+
     - Add authentication middleware
     - Verify playlist belongs to authenticated user
     - Delete playlist document from database

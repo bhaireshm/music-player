@@ -257,7 +257,7 @@ export default function SearchOverlay() {
         {isLoading && (
           <Center py="xl">
             <Stack align="center" gap="sm">
-              <Loader size="md" />
+              <Loader size="md" color="accent1" />
               <Text size="sm" c="dimmed">
                 Searching...
               </Text>
@@ -307,14 +307,27 @@ export default function SearchOverlay() {
         {/* Empty State (no query) */}
         {!query && !isLoading && searchHistory.length === 0 && (
           <Center py="xl">
-            <Stack align="center" gap="sm">
-              <IconSearch size={48} color={theme.colors.gray[4]} />
-              <Text size="sm" c="dimmed" ta="center">
-                Start typing to search your music library
-              </Text>
-              <Text size="xs" c="dimmed" ta="center">
-                Press Ctrl+K (Cmd+K on Mac) to open search anytime
-              </Text>
+            <Stack align="center" gap="md">
+              <Box
+                style={{
+                  background: `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`,
+                  borderRadius: '50%',
+                  padding: theme.spacing.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <IconSearch size={48} color={theme.colors.accent1[6]} stroke={1.5} />
+              </Box>
+              <Stack align="center" gap="xs">
+                <Text size="sm" fw={500} ta="center">
+                  Start typing to search your music library
+                </Text>
+                <Text size="xs" c="dimmed" ta="center">
+                  Press Ctrl+K (Cmd+K on Mac) to open search anytime
+                </Text>
+              </Stack>
             </Stack>
           </Center>
         )}
@@ -327,14 +340,27 @@ export default function SearchOverlay() {
           results.totalCounts.playlists === 0
         ) && (
           <Center py="xl">
-            <Stack align="center" gap="sm">
-              <IconX size={48} color={theme.colors.gray[4]} />
-              <Text size="sm" c="dimmed" ta="center">
-                No results found for &ldquo;{query}&rdquo;
-              </Text>
-              <Text size="xs" c="dimmed" ta="center">
-                Try different keywords or check your spelling
-              </Text>
+            <Stack align="center" gap="md">
+              <Box
+                style={{
+                  background: `linear-gradient(135deg, ${theme.colors.secondary[1]} 0%, ${theme.colors.accent2[1]} 100%)`,
+                  borderRadius: '50%',
+                  padding: theme.spacing.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <IconMusic size={48} color={theme.colors.accent2[6]} stroke={1.5} />
+              </Box>
+              <Stack align="center" gap="xs">
+                <Text size="sm" fw={500} ta="center">
+                  No results found for &ldquo;{query}&rdquo;
+                </Text>
+                <Text size="xs" c="dimmed" ta="center">
+                  Try different keywords or check your spelling
+                </Text>
+              </Stack>
             </Stack>
           </Center>
         )}
