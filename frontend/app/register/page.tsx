@@ -43,7 +43,7 @@ export default function RegisterPage() {
     <Box
       style={(theme) => ({
         minHeight: '100vh',
-        background: theme.other?.gradient || 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -55,10 +55,10 @@ export default function RegisterPage() {
           shadow="xl" 
           p={30} 
           radius="md"
-          style={{
-            background: 'rgba(255, 255, 255, 0.95)',
+          style={(theme) => ({
+            background: `rgba(${parseInt(theme.colors.primary[0].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[0].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[0].slice(5, 7), 16)}, 0.95)`,
             backdropFilter: 'blur(10px)',
-          }}
+          })}
         >
           <Stack gap="md">
             <div>
@@ -66,12 +66,12 @@ export default function RegisterPage() {
                 order={1} 
                 ta="center" 
                 mb={8}
-                style={{
-                  backgroundImage: 'linear-gradient(135deg, #011f4b 0%, #2c3e50 100%)',
+                style={(theme) => ({
+                  backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.accent2[7]} 100%)`,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                }}
+                })}
               >
                 Create Account
               </Title>
@@ -88,15 +88,6 @@ export default function RegisterPage() {
                   required
                   disabled={loading}
                   size="md"
-                  styles={{
-                    input: {
-                      backgroundColor: 'white',
-                      color: '#000',
-                      '&::placeholder': {
-                        color: '#adb5bd',
-                      },
-                    },
-                  }}
                   {...form.getInputProps('email')}
                 />
 
@@ -106,15 +97,6 @@ export default function RegisterPage() {
                   required
                   disabled={loading}
                   size="md"
-                  styles={{
-                    input: {
-                      backgroundColor: 'white',
-                      color: '#000',
-                      '&::placeholder': {
-                        color: '#adb5bd',
-                      },
-                    },
-                  }}
                   {...form.getInputProps('password')}
                 />
 
@@ -124,15 +106,6 @@ export default function RegisterPage() {
                   required
                   disabled={loading}
                   size="md"
-                  styles={{
-                    input: {
-                      backgroundColor: 'white',
-                      color: '#000',
-                      '&::placeholder': {
-                        color: '#adb5bd',
-                      },
-                    },
-                  }}
                   {...form.getInputProps('confirmPassword')}
                 />
 
@@ -147,7 +120,7 @@ export default function RegisterPage() {
                   fullWidth
                   loading={loading}
                   variant="gradient"
-                  gradient={{ from: 'deepBlue.7', to: 'slate.7', deg: 135 }}
+                  gradient={{ from: 'accent1.7', to: 'accent2.7', deg: 135 }}
                 >
                   Sign Up
                 </Button>
@@ -156,7 +129,7 @@ export default function RegisterPage() {
 
             <Text c="dimmed" size="sm" ta="center">
               Already have an account?{' '}
-              <Anchor component={Link} href="/login" size="sm" c="deepBlue.7">
+              <Anchor component={Link} href="/login" size="sm" c="accent1.7">
                 Sign in
               </Anchor>
             </Text>
