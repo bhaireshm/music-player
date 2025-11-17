@@ -338,6 +338,58 @@ export async function getAllSongs(
 }
 
 /**
+ * Get song metadata by ID
+ * GET /songs/:id/metadata
+ */
+export async function getSongMetadata(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const { id } = req.params;
+
+    // Fetch song metadata from database
+    const song = await Song.findById(id);
+    
+    if (!song) {
+      res.status(404).json({
+        error: {
+          code: 'SONG_NOT_FOUND',
+          message: 'Song not found',
+        },
+      });
+      return;
+    }
+
+    // Return song metadata
+    res.status(200).json({
+      song: {
+        id: song._id,
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        year: song.year,
+        genre: song.genre,
+        mimeType: song.mimeType,
+        createdAt: song.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Get song metadata error:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    res.status(500).json({
+      error: {
+        code: 'FETCH_FAILED',
+        message: 'Failed to fetch song metadata',
+        details: errorMessage,
+      },
+    });
+  }
+}
+
+/**
  * Stream a song by ID
  * GET /songs/:id
  */

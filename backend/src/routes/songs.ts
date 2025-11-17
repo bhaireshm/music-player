@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
 import multer from 'multer';
 import { verifyToken } from '../middleware/auth';
-import { uploadSong, streamSong, getAllSongs } from '../controllers/songController';
+import { uploadSong, streamSong, getAllSongs, getSongMetadata } from '../controllers/songController';
 
 const router: RouterType = Router();
 
@@ -39,6 +39,9 @@ router.get('/', verifyToken, getAllSongs);
 
 // POST /songs/upload - Upload a new song
 router.post('/upload', verifyToken, upload.single('file'), uploadSong);
+
+// GET /songs/:id/metadata - Get song metadata by ID
+router.get('/:id/metadata', verifyToken, getSongMetadata);
 
 // GET /songs/:id - Stream a song by ID
 router.get('/:id', verifyToken, streamSong);
