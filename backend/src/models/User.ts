@@ -1,9 +1,20 @@
 import { Schema, model, Document } from 'mongoose';
 
+export interface IUserPreferences {
+  theme?: 'light' | 'dark' | 'system';
+  language?: string;
+  notifications?: boolean;
+}
+
 export interface IUser extends Document {
   uid: string;
   email: string;
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+  preferences: IUserPreferences;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>({
@@ -17,10 +28,46 @@ const userSchema = new Schema<IUser>({
     required: true,
     unique: true,
   },
+  displayName: {
+    type: String,
+    required: false,
+  },
+  bio: {
+    type: String,
+    required: false,
+    maxlength: 500,
+  },
+  avatarUrl: {
+    type: String,
+    required: false,
+  },
+  preferences: {
+    theme: {
+      type: String,
+      enum: ['light', 'dark', 'system'],
+      default: 'system',
+    },
+    language: {
+      type: String,
+      default: 'en',
+    },
+    notifications: {
+      type: Boolean,
+      default: true,
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
+
+// Add index for searching users
+userSchema.index({ displayName: 1 });
+userSchema.index({ email: 1 });
 
 export const User = model<IUser>('User', userSchema);

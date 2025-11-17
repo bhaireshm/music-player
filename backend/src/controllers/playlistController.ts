@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { Playlist } from '../models/Playlist';
 import { Song } from '../models/Song';
 import { Types } from 'mongoose';
+import { getPlaylistPermission, PlaylistPermission } from '../middleware/playlistPermissions';
 
 /**
  * GET /playlists
@@ -13,30 +14,46 @@ export async function getPlaylists(
   res: Response
 ): Promise<void> {
   try {
-    const userId = req.userId;
+    const userId = req.userId!;
 
-    // Query playlists by userId and populate song metadata
-    const playlists = await Playlist.find({ userId })
+    // Query playlists where user is owner, collaborator, or follower
+    const playlists = await Playlist.find({
+      $or: [
+        { userId },
+        { ownerId: userId },
+        { collaborators: userId },
+        { followers: userId },
+      ],
+    })
       .populate('songIds', 'title artist mimeType createdAt')
       .exec();
 
     // Transform playlists to match frontend interface
-    const transformedPlaylists = playlists.map((playlist) => ({
-      id: (playlist._id as Types.ObjectId).toString(),
-      name: playlist.name,
-      userId: playlist.userId,
-      songIds: playlist.songIds.map((song: any) => 
-        song._id ? {
-          id: song._id.toString(),
-          title: song.title,
-          artist: song.artist,
-          mimeType: song.mimeType,
-          createdAt: song.createdAt,
-        } : song
-      ),
-      createdAt: playlist.createdAt,
-      updatedAt: playlist.updatedAt,
-    }));
+    const transformedPlaylists = playlists.map((playlist) => {
+      const permission = getPlaylistPermission(playlist, userId);
+      return {
+        id: (playlist._id as Types.ObjectId).toString(),
+        name: playlist.name,
+        userId: playlist.userId,
+        ownerId: playlist.ownerId,
+        visibility: playlist.visibility,
+        collaborators: playlist.collaborators,
+        followers: playlist.followers,
+        followerCount: playlist.followers.length,
+        permission,
+        songIds: playlist.songIds.map((song: any) => 
+          song._id ? {
+            id: song._id.toString(),
+            title: song.title,
+            artist: song.artist,
+            mimeType: song.mimeType,
+            createdAt: song.createdAt,
+          } : song
+        ),
+        createdAt: playlist.createdAt,
+        updatedAt: playlist.updatedAt,
+      };
+    });
 
     res.status(200).json(transformedPlaylists);
   } catch (error) {
@@ -60,7 +77,7 @@ export async function getPlaylist(
   res: Response
 ): Promise<void> {
   try {
-    const userId = req.userId;
+    const userId = req.userId!;
     const playlistId = req.params.id;
 
     // Validate playlist ID
@@ -74,11 +91,8 @@ export async function getPlaylist(
       return;
     }
 
-    // Find playlist and populate song metadata
-    const playlist = await Playlist.findOne({
-      _id: playlistId,
-      userId,
-    })
+    // Find playlist
+    const playlist = await Playlist.findById(playlistId)
       .populate('songIds', 'title artist mimeType createdAt')
       .exec();
 
@@ -86,7 +100,20 @@ export async function getPlaylist(
       res.status(404).json({
         error: {
           code: 'INVALID_PLAYLIST_ID',
-          message: 'Playlist not found or access denied',
+          message: 'Playlist not found',
+        },
+      });
+      return;
+    }
+
+    // Check access permissions
+    const permission = getPlaylistPermission(playlist, userId);
+    
+    if (permission === PlaylistPermission.NONE) {
+      res.status(403).json({
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'You do not have permission to view this playlist',
         },
       });
       return;
@@ -97,6 +124,12 @@ export async function getPlaylist(
       id: (playlist._id as Types.ObjectId).toString(),
       name: playlist.name,
       userId: playlist.userId,
+      ownerId: playlist.ownerId,
+      visibility: playlist.visibility,
+      collaborators: playlist.collaborators,
+      followers: playlist.followers,
+      followerCount: playlist.followers.length,
+      permission,
       songIds: playlist.songIds.map((song: any) => ({
         id: song._id.toString(),
         title: song.title,
@@ -130,7 +163,7 @@ export async function createPlaylist(
   res: Response
 ): Promise<void> {
   try {
-    const userId = req.userId;
+    const userId = req.userId!;
     const { name } = req.body;
 
     // Validate playlist name
@@ -148,6 +181,10 @@ export async function createPlaylist(
     const playlist = new Playlist({
       name: name.trim(),
       userId,
+      ownerId: userId, // Set ownerId to current user
+      visibility: 'private', // Default to private
+      collaborators: [],
+      followers: [],
       songIds: [],
     });
 
@@ -158,6 +195,12 @@ export async function createPlaylist(
       id: (playlist._id as Types.ObjectId).toString(),
       name: playlist.name,
       userId: playlist.userId,
+      ownerId: playlist.ownerId,
+      visibility: playlist.visibility,
+      collaborators: playlist.collaborators,
+      followers: playlist.followers,
+      followerCount: 0,
+      permission: PlaylistPermission.OWNER,
       songIds: [],
       createdAt: playlist.createdAt,
       updatedAt: playlist.updatedAt,
@@ -185,7 +228,7 @@ export async function updatePlaylist(
   res: Response
 ): Promise<void> {
   try {
-    const userId = req.userId;
+    const userId = req.userId!;
     const playlistId = req.params.id;
     const { songIds } = req.body;
 
@@ -238,17 +281,28 @@ export async function updatePlaylist(
       return;
     }
 
-    // Find and update playlist
-    const playlist = await Playlist.findOne({
-      _id: playlistId,
-      userId,
-    });
+    // Find playlist
+    const playlist = await Playlist.findById(playlistId);
 
     if (!playlist) {
       res.status(404).json({
         error: {
           code: 'INVALID_PLAYLIST_ID',
-          message: 'Playlist not found or access denied',
+          message: 'Playlist not found',
+        },
+      });
+      return;
+    }
+
+    // Check if user is owner or collaborator
+    const isOwner = playlist.ownerId === userId;
+    const isCollaborator = playlist.collaborators.includes(userId);
+
+    if (!isOwner && !isCollaborator) {
+      res.status(403).json({
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'You do not have permission to edit this playlist',
         },
       });
       return;
@@ -262,11 +316,20 @@ export async function updatePlaylist(
     // Populate and return updated playlist
     await playlist.populate('songIds', 'title artist mimeType createdAt');
 
+    // Get permission level
+    const permission = getPlaylistPermission(playlist, userId);
+
     // Transform playlist to match frontend interface
     const transformedPlaylist = {
       id: (playlist._id as Types.ObjectId).toString(),
       name: playlist.name,
       userId: playlist.userId,
+      ownerId: playlist.ownerId,
+      visibility: playlist.visibility,
+      collaborators: playlist.collaborators,
+      followers: playlist.followers,
+      followerCount: playlist.followers.length,
+      permission,
       songIds: playlist.songIds.map((song: any) => ({
         id: song._id.toString(),
         title: song.title,
@@ -300,7 +363,7 @@ export async function deletePlaylist(
   res: Response
 ): Promise<void> {
   try {
-    const userId = req.userId;
+    const userId = req.userId!;
     const playlistId = req.params.id;
 
     // Validate playlist ID
@@ -314,21 +377,32 @@ export async function deletePlaylist(
       return;
     }
 
-    // Find and delete playlist (only if it belongs to the user)
-    const result = await Playlist.findOneAndDelete({
-      _id: playlistId,
-      userId,
-    });
+    // Find playlist
+    const playlist = await Playlist.findById(playlistId);
 
-    if (!result) {
+    if (!playlist) {
       res.status(404).json({
         error: {
           code: 'INVALID_PLAYLIST_ID',
-          message: 'Playlist not found or access denied',
+          message: 'Playlist not found',
         },
       });
       return;
     }
+
+    // Only owner can delete playlist
+    if (playlist.ownerId !== userId) {
+      res.status(403).json({
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'Only the playlist owner can delete this playlist',
+        },
+      });
+      return;
+    }
+
+    // Delete playlist
+    await Playlist.findByIdAndDelete(playlistId);
 
     res.status(200).json({
       message: 'Playlist deleted successfully',

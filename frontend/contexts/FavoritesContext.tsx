@@ -21,11 +21,26 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     // Only fetch if user might be authenticated (check for Firebase auth state)
     const checkAuthAndFetch = async () => {
       try {
-        const { getIdToken } = await import('@/lib/firebase');
-        const token = await getIdToken();
-        if (token) {
-          refreshFavorites();
-        }
+        const { getIdToken, auth } = await import('@/lib/firebase');
+        
+        // Wait for auth state to be determined
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+          if (user) {
+            try {
+              const token = await getIdToken();
+              if (token) {
+                await refreshFavorites();
+              }
+            } catch (error) {
+              setIsLoading(false);
+            }
+          } else {
+            setIsLoading(false);
+          }
+        });
+        
+        // Cleanup subscription
+        return () => unsubscribe();
       } catch (error) {
         // User not authenticated, skip fetching favorites
         setIsLoading(false);
@@ -33,6 +48,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     };
     
     checkAuthAndFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refresh favorites from API
@@ -43,7 +59,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       const favoritesData = await getFavorites();
       
       // Extract song IDs from favorites
-      const songIds = new Set<string>(favoritesData.favorites.map((fav: any) => fav.song.id as string));
+      const songIds = new Set<string>((favoritesData as { favorites: Array<{ song: { id: string } }> }).favorites.map((fav) => fav.song.id));
       setFavorites(songIds);
     } catch (error) {
       // Silently fail if user is not authenticated

@@ -4,8 +4,10 @@ import cors from 'cors';
 import { connectDB } from './config/db';
 import songsRouter from './routes/songs';
 import playlistsRouter from './routes/playlists';
+import playlistSharingRouter from './routes/playlistSharing';
 import searchRouter from './routes/search';
 import favoritesRouter from './routes/favorites';
+import usersRouter from './routes/users';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // Load environment variables
@@ -20,9 +22,11 @@ app.use(express.json());
 
 // Routes
 app.use('/songs', songsRouter);
+app.use('/playlists', playlistSharingRouter); // Sharing routes (must come before playlists)
 app.use('/playlists', playlistsRouter);
 app.use('/search', searchRouter);
 app.use('/favorites', favoritesRouter);
+app.use('/users', usersRouter);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

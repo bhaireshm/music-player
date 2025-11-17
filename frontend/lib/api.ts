@@ -35,6 +35,12 @@ export interface Playlist {
   id: string;
   name: string;
   userId: string;
+  ownerId: string;
+  visibility: 'private' | 'shared' | 'public';
+  collaborators: string[];
+  followers: string[];
+  followerCount: number;
+  permission?: string;
   songIds: string[] | Song[];
   createdAt: string;
   updatedAt: string;
@@ -343,7 +349,7 @@ export async function removeFavorite(songId: string): Promise<void> {
 /**
  * Get all favorites for the current user
  */
-export async function getFavorites(limit: number = 100, offset: number = 0): Promise<any> {
+export async function getFavorites(limit: number = 100, offset: number = 0): Promise<unknown> {
   const params = new URLSearchParams({
     limit: limit.toString(),
     offset: offset.toString(),
@@ -367,4 +373,213 @@ export async function checkFavoriteStatus(songId: string): Promise<{ isFavorite:
 export async function getFavoriteCount(songId: string): Promise<{ count: number }> {
   const response = await makeAuthenticatedRequest(`/songs/${songId}/favorites/count`);
   return parseResponse(response);
+}
+
+/**
+ * Update playlist visibility
+ */
+export async function updatePlaylistVisibility(
+  playlistId: string,
+  visibility: 'private' | 'shared' | 'public'
+): Promise<Playlist> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/visibility`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ visibility }),
+  });
+  const data = await parseResponse<{ playlist: Playlist }>(response);
+  return data.playlist;
+}
+
+/**
+ * Add a collaborator to a playlist
+ */
+export async function addCollaborator(
+  playlistId: string,
+  collaboratorId: string
+): Promise<Playlist> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/collaborators`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ collaboratorId }),
+  });
+  const data = await parseResponse<{ playlist: Playlist }>(response);
+  return data.playlist;
+}
+
+/**
+ * Remove a collaborator from a playlist
+ */
+export async function removeCollaborator(
+  playlistId: string,
+  collaboratorId: string
+): Promise<void> {
+  const response = await makeAuthenticatedRequest(
+    `/playlists/${playlistId}/collaborators/${collaboratorId}`,
+    {
+      method: 'DELETE',
+    }
+  );
+  await parseResponse<{ success: boolean }>(response);
+}
+
+/**
+ * Follow a public playlist
+ */
+export async function followPlaylist(playlistId: string): Promise<void> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/follow`, {
+    method: 'POST',
+  });
+  await parseResponse<{ success: boolean }>(response);
+}
+
+/**
+ * Unfollow a playlist
+ */
+export async function unfollowPlaylist(playlistId: string): Promise<void> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/follow`, {
+    method: 'DELETE',
+  });
+  await parseResponse<{ success: boolean }>(response);
+}
+
+/**
+ * Get all public playlists with pagination and search
+ */
+export async function getPublicPlaylists(
+  limit: number = 20,
+  offset: number = 0,
+  search: string = ''
+): Promise<{ playlists: Playlist[]; total: number; limit: number; offset: number }> {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+    offset: offset.toString(),
+  });
+  
+  if (search) {
+    params.append('search', search);
+  }
+
+  const response = await makeAuthenticatedRequest(`/playlists/public?${params.toString()}`);
+  return parseResponse(response);
+}
+
+/**
+ * Get recommended public playlists (discover)
+ */
+export async function getDiscoverPlaylists(limit: number = 20): Promise<{ playlists: Playlist[] }> {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+  });
+
+  const response = await makeAuthenticatedRequest(`/playlists/discover?${params.toString()}`);
+  return parseResponse(response);
+}
+
+/**
+ * Generate a shareable link for a playlist
+ */
+export async function getShareLink(playlistId: string): Promise<string> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/share-link`);
+  const data = await parseResponse<{ shareLink: string }>(response);
+  return data.shareLink;
+}
+
+/**
+ * User profile and settings interfaces
+ */
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+  preferences?: {
+    theme?: 'light' | 'dark' | 'system';
+    language?: string;
+    notifications?: boolean;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface UserSettings {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  notifications: boolean;
+}
+
+/**
+ * Get current user profile
+ */
+export async function getUserProfile(): Promise<UserProfile> {
+  const response = await makeAuthenticatedRequest('/users/me');
+  const data = await parseResponse<{ user: UserProfile }>(response);
+  return data.user;
+}
+
+/**
+ * Update current user profile
+ */
+export async function updateUserProfile(
+  displayName?: string,
+  bio?: string,
+  avatarUrl?: string
+): Promise<UserProfile> {
+  const response = await makeAuthenticatedRequest('/users/me', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ displayName, bio, avatarUrl }),
+  });
+  const data = await parseResponse<{ user: UserProfile }>(response);
+  return data.user;
+}
+
+/**
+ * Get public user info by ID
+ */
+export async function getUserById(userId: string): Promise<Partial<UserProfile>> {
+  const response = await makeAuthenticatedRequest(`/users/${userId}`);
+  const data = await parseResponse<{ user: Partial<UserProfile> }>(response);
+  return data.user;
+}
+
+/**
+ * Search users by email or display name
+ */
+export async function searchUsers(query: string): Promise<Partial<UserProfile>[]> {
+  const params = new URLSearchParams({ q: query });
+  const response = await makeAuthenticatedRequest(`/users/search?${params.toString()}`);
+  const data = await parseResponse<{ users: Partial<UserProfile>[] }>(response);
+  return data.users;
+}
+
+/**
+ * Get current user settings
+ */
+export async function getUserSettings(): Promise<UserSettings> {
+  const response = await makeAuthenticatedRequest('/users/me/settings');
+  const data = await parseResponse<{ settings: UserSettings }>(response);
+  return data.settings;
+}
+
+/**
+ * Update current user settings
+ */
+export async function updateUserSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
+  const response = await makeAuthenticatedRequest('/users/me/settings', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(settings),
+  });
+  const data = await parseResponse<{ settings: UserSettings }>(response);
+  return data.settings;
 }

@@ -177,7 +177,11 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         gap="lg"
       >
         {/* Left: Album Art and Song Info */}
-        <Group gap="xs" style={{ minWidth: 0, flex: '0 0 200px' }}>
+        <Group 
+          gap="xs" 
+          style={{ minWidth: 0, flex: '0 0 200px', cursor: 'pointer' }}
+          onClick={() => window.location.href = `/songs/${currentSong.id}`}
+        >
           <Box
             style={{
               position: 'relative',
@@ -206,7 +210,9 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               >
                 {currentSong.title}
               </Text>
-              <FavoriteButton songId={currentSong.id} size="sm" />
+              <div onClick={(e) => e.stopPropagation()}>
+                <FavoriteButton songId={currentSong.id} size="sm" />
+              </div>
             </Group>
             <Text 
               size="xs" 

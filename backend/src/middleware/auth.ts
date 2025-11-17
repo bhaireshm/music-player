@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../config/firebase';
+import { User } from '../models/User';
 
 /**
  * Extended Request interface to include userId
@@ -48,6 +49,29 @@ export async function verifyToken(
 
     // Attach userId to request object
     req.userId = decodedToken.uid;
+
+    // Ensure user exists in database (create if not exists)
+    try {
+      let user = await User.findOne({ uid: decodedToken.uid });
+      
+      if (!user) {
+        // Create new user record
+        user = new User({
+          uid: decodedToken.uid,
+          email: decodedToken.email || '',
+          displayName: decodedToken.name || '',
+          preferences: {
+            theme: 'system',
+            language: 'en',
+            notifications: true,
+          },
+        });
+        await user.save();
+      }
+    } catch (dbError) {
+      // Log error but don't block the request
+      console.error('Error ensuring user exists:', dbError);
+    }
 
     // Proceed to next middleware/handler
     next();

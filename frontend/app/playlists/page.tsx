@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getPlaylists, createPlaylist, deletePlaylist, Playlist } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/hooks/useAuth';
 import { notifications } from '@mantine/notifications';
 import {
   Container,
@@ -22,12 +23,14 @@ import {
   ActionIcon,
   useMantineTheme,
   useMantineColorScheme,
+  Tabs,
 } from '@mantine/core';
 import {
   IconPlaylist,
   IconPlus,
   IconAlertCircle,
   IconTrash,
+  IconHeart,
 } from '@tabler/icons-react';
 
 function PlaylistsPageContent() {
@@ -38,8 +41,10 @@ function PlaylistsPageContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'my' | 'followed'>('my');
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchPlaylists();
@@ -59,6 +64,12 @@ function PlaylistsPageContent() {
       setLoading(false);
     }
   };
+
+  const myPlaylists = playlists.filter(p => p.ownerId === user?.uid || p.userId === user?.uid);
+  const followedPlaylists = playlists.filter(p => 
+    (p.ownerId !== user?.uid && p.userId !== user?.uid) && 
+    p.followers.includes(user?.uid || '')
+  );
 
   const handleCreatePlaylist = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +142,7 @@ function PlaylistsPageContent() {
                 fontSize: 'clamp(1.5rem, 4vw, 2rem)',
               }}
             >
-              My Playlists
+              Playlists
             </Title>
             <Text c="dimmed" size="sm">
               {playlists.length} {playlists.length === 1 ? 'playlist' : 'playlists'}
@@ -147,6 +158,18 @@ function PlaylistsPageContent() {
             New Playlist
           </Button>
         </Group>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onChange={(value) => setActiveTab(value as 'my' | 'followed')} mb="lg">
+          <Tabs.List>
+            <Tabs.Tab value="my" leftSection={<IconPlaylist size={16} />}>
+              My Playlists
+            </Tabs.Tab>
+            <Tabs.Tab value="followed" leftSection={<IconHeart size={16} />}>
+              Followed
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
 
         {/* Loading State */}
         {loading && (
@@ -175,7 +198,7 @@ function PlaylistsPageContent() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && playlists.length === 0 && (
+        {!loading && !error && (activeTab === 'my' ? myPlaylists : followedPlaylists).length === 0 && (
           <Card
             shadow="sm"
             padding="lg"
@@ -200,10 +223,12 @@ function PlaylistsPageContent() {
               </Box>
               <Stack gap="xs" align="center">
                 <Text size="lg" fw={600}>
-                  No playlists yet
+                  {activeTab === 'my' ? 'No playlists yet' : 'No followed playlists'}
                 </Text>
                 <Text c="dimmed" size="sm" ta="center" maw={350}>
-                  Create your first playlist to organize your favorite songs.
+                  {activeTab === 'my' 
+                    ? 'Create your first playlist to organize your favorite songs.'
+                    : 'Follow public playlists from the Discover page.'}
                 </Text>
               </Stack>
               <Button
@@ -220,9 +245,9 @@ function PlaylistsPageContent() {
         )}
 
         {/* Playlist Grid */}
-        {!loading && !error && playlists.length > 0 && (
+        {!loading && !error && (activeTab === 'my' ? myPlaylists : followedPlaylists).length > 0 && (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={theme.spacing.md}>
-            {playlists.map((playlist) => {
+            {(activeTab === 'my' ? myPlaylists : followedPlaylists).map((playlist) => {
               const songCount = Array.isArray(playlist.songIds) ? playlist.songIds.length : 0;
               
               return (

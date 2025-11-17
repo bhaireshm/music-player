@@ -251,6 +251,18 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
       // Load the new song
       audioRef.current.src = authenticatedUrl;
+      
+      // Add error handler for loading issues
+      const handleLoadError = (e: Event) => {
+        console.error('Audio load error:', e);
+        console.error('Attempted URL:', authenticatedUrl);
+        console.error('Backend URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
+        setError('Cannot load audio. Make sure the backend server is running on port 3001.');
+        setIsPlaying(false);
+        setLoading(false);
+      };
+      
+      audioRef.current.addEventListener('error', handleLoadError, { once: true });
       audioRef.current.load();
       
       // Reset playback state
@@ -281,12 +293,18 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const play = useCallback(() => {
     if (!audioRef.current || !currentSong) return;
 
+    // If the audio source is not set, load the song first
+    if (!audioRef.current.src || audioRef.current.src === '') {
+      loadSong(currentSong);
+      return;
+    }
+
     audioRef.current.play().catch((err) => {
       console.error('Playback error:', err);
       setError('Failed to play audio');
       setIsPlaying(false);
     });
-  }, [currentSong]);
+  }, [currentSong, loadSong]);
 
   /**
    * Pause the current song

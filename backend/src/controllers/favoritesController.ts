@@ -40,23 +40,27 @@ export async function addFavorite(
     }
 
     // Check if already favorited
-    const existingFavorite = await Favorite.findOne({
+    let favorite = await Favorite.findOne({
       userId,
       songId: new Types.ObjectId(songId),
     });
 
-    if (existingFavorite) {
-      res.status(409).json({
-        error: {
-          code: 'ALREADY_FAVORITED',
-          message: 'Song is already in favorites',
+    if (favorite) {
+      // Already favorited, return success (idempotent operation)
+      res.status(200).json({
+        favorite: {
+          id: (favorite._id as Types.ObjectId).toString(),
+          userId: favorite.userId,
+          songId: favorite.songId.toString(),
+          createdAt: favorite.createdAt,
         },
+        message: 'Song is already in favorites',
       });
       return;
     }
 
     // Create favorite
-    const favorite = new Favorite({
+    favorite = new Favorite({
       userId,
       songId: new Types.ObjectId(songId),
     });
@@ -106,22 +110,13 @@ export async function removeFavorite(
       return;
     }
 
-    // Find and delete favorite
-    const result = await Favorite.findOneAndDelete({
+    // Find and delete favorite (idempotent - no error if not found)
+    await Favorite.findOneAndDelete({
       userId,
       songId: new Types.ObjectId(songId),
     });
 
-    if (!result) {
-      res.status(404).json({
-        error: {
-          code: 'FAVORITE_NOT_FOUND',
-          message: 'Favorite not found',
-        },
-      });
-      return;
-    }
-
+    // Return success even if not found (idempotent operation)
     res.status(200).json({
       success: true,
       message: 'Favorite removed successfully',

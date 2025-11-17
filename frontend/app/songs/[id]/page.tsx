@@ -188,14 +188,16 @@ function SongDetailsPageContent() {
                         </Text>
                       </Group>
                     )}
-                    <Group gap="xs">
-                      <Text fw={600} size="sm">
-                        Duration:
-                      </Text>
-                      <Text size="sm" c="dimmed">
-                        {formatDuration(song.duration)}
-                      </Text>
-                    </Group>
+                    {song.duration && (
+                      <Group gap="xs">
+                        <Text fw={600} size="sm">
+                          Duration:
+                        </Text>
+                        <Text size="sm" c="dimmed">
+                          {formatDuration(song.duration)}
+                        </Text>
+                      </Group>
+                    )}
                     <Group gap="xs">
                       <Text fw={600} size="sm">
                         Added:

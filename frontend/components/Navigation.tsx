@@ -23,9 +23,11 @@ import {
   IconVinyl,
   IconSettings,
   IconHeart,
+  IconCompass,
 } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
 import SearchInput from '@/components/SearchInput';
+import UserAvatar from '@/components/UserAvatar';
 
 /**
  * Navigation component with links to main pages and user authentication display
@@ -213,6 +215,32 @@ export default function Navigation() {
                 >
                   Playlists
                 </Button>
+                <Button
+                  variant="subtle"
+                  leftSection={<IconCompass size={18} />}
+                  onClick={() => router.push('/discover')}
+                  size="md"
+                  radius="md"
+                  styles={{
+                    root: {
+                      color: theme.colors.primary[0],
+                      fontWeight: 500,
+                      transition: 'all 150ms ease',
+                      position: 'relative',
+                      borderBottom: isActive('/discover') 
+                        ? `2px solid ${theme.colors.primary[0]}` 
+                        : '2px solid transparent',
+                      borderRadius: isActive('/discover') 
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                        : theme.radius.md,
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      },
+                    },
+                  }}
+                >
+                  Discover
+                </Button>
               </Group>
             </Group>
           )}
@@ -222,23 +250,23 @@ export default function Navigation() {
             {user ? (
               <Menu shadow="sm" width={180} position="bottom-end" offset={4}>
                 <Menu.Target>
-                  <ActionIcon
-                    variant="subtle"
-                    size={40}
-                    radius="md"
-                    aria-label="User menu"
-                    styles={{
-                      root: {
-                        color: theme.colors.primary[0],
-                        transition: 'all 150ms ease',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                        },
-                      },
+                  <div
+                    style={{
+                      cursor: 'pointer',
+                      transition: 'transform 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
                     }}
                   >
-                    <IconUser size={18} />
-                  </ActionIcon>
+                    <UserAvatar
+                      email={user.email || undefined}
+                      size="md"
+                    />
+                  </div>
                 </Menu.Target>
 
                 <Menu.Dropdown p={theme.spacing.xs}>
@@ -246,6 +274,13 @@ export default function Navigation() {
                     {user.email}
                   </Menu.Label>
                   <Menu.Divider my={theme.spacing.xs} />
+                  <Menu.Item
+                    leftSection={<IconUser size={14} />}
+                    onClick={() => router.push('/profile')}
+                    style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
+                  >
+                    Profile
+                  </Menu.Item>
                   <Menu.Item
                     leftSection={<IconSettings size={14} />}
                     onClick={() => router.push('/settings')}
@@ -378,9 +413,36 @@ export default function Navigation() {
             marginBottom: theme.spacing.sm,
           }}
         />
+        <NavLink
+          label="Discover"
+          description="Explore public playlists"
+          leftSection={<IconCompass size={20} />}
+          active={isActive('/discover')}
+          onClick={() => {
+            router.push('/discover');
+            closeDrawer();
+          }}
+          style={{
+            borderRadius: theme.radius.md,
+            marginBottom: theme.spacing.sm,
+          }}
+        />
         <Divider my={theme.spacing.md} />
         {user && (
           <>
+            <NavLink
+              label="Profile"
+              description="Your profile"
+              leftSection={<IconUser size={20} />}
+              onClick={() => {
+                router.push('/profile');
+                closeDrawer();
+              }}
+              style={{
+                borderRadius: theme.radius.md,
+                marginBottom: theme.spacing.sm,
+              }}
+            />
             <NavLink
               label="Settings"
               description="Preferences"

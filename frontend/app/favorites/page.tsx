@@ -67,7 +67,7 @@ function FavoritesPageContent() {
 
     try {
       const data = await getFavorites();
-      const favoriteSongs = data.favorites.map((fav: any) => ({
+      const favoriteSongs = (data as { favorites: Array<{ song: any; createdAt: string }> }).favorites.map((fav) => ({
         ...fav.song,
         favoritedAt: fav.createdAt,
       }));

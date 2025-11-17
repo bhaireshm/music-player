@@ -35,8 +35,12 @@ import {
   IconAlertCircle,
   IconMusic,
   IconPlus,
+  IconShare,
+  IconUsers,
 } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
+import SharePlaylistModal from '@/components/SharePlaylistModal';
+import VisibilityBadge from '@/components/VisibilityBadge';
 
 function PlaylistDetailPageContent() {
   const params = useParams();
@@ -48,6 +52,7 @@ function PlaylistDetailPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddSongModal, setShowAddSongModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
@@ -244,6 +249,21 @@ function PlaylistDetailPageContent() {
             </Box>
           </Group>
 
+          {/* Visibility Badge and Info */}
+          {!loading && !error && playlist && (
+            <Group gap="xs" mb="sm">
+              <VisibilityBadge visibility={playlist.visibility} />
+              {playlist.followerCount > 0 && (
+                <Group gap={4}>
+                  <IconUsers size={16} />
+                  <Text size="sm" c="dimmed">
+                    {playlist.followerCount} {playlist.followerCount === 1 ? 'follower' : 'followers'}
+                  </Text>
+                </Group>
+              )}
+            </Group>
+          )}
+
           {/* Action Buttons */}
           {!loading && !error && playlistSongs.length > 0 && (
             <Group>
@@ -255,15 +275,27 @@ function PlaylistDetailPageContent() {
               >
                 Play All
               </Button>
-              <Button
-                variant="light"
-                color="accent1"
-                leftSection={<IconPlus size={18} />}
-                onClick={() => setShowAddSongModal(true)}
-                disabled={updating || availableSongs.length === 0}
-              >
-                Add Song
-              </Button>
+              {playlist?.permission === 'owner' || playlist?.permission === 'collaborator' ? (
+                <Button
+                  variant="light"
+                  color="accent1"
+                  leftSection={<IconPlus size={18} />}
+                  onClick={() => setShowAddSongModal(true)}
+                  disabled={updating || availableSongs.length === 0}
+                >
+                  Add Song
+                </Button>
+              ) : null}
+              {playlist?.permission === 'owner' && (
+                <Button
+                  variant="light"
+                  color="blue"
+                  leftSection={<IconShare size={18} />}
+                  onClick={() => setShowShareModal(true)}
+                >
+                  Share
+                </Button>
+              )}
             </Group>
           )}
         </Box>
@@ -593,6 +625,16 @@ function PlaylistDetailPageContent() {
           </Stack>
         )}
       </Modal>
+
+      {/* Share Playlist Modal */}
+      {playlist && (
+        <SharePlaylistModal
+          opened={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          playlist={playlist}
+          onUpdate={setPlaylist}
+        />
+      )}
     </Box>
   );
 }
