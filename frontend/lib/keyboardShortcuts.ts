@@ -48,6 +48,11 @@ export const KEYBOARD_SHORTCUTS: ShortcutConfig = {
     description: 'Volume down',
     category: 'playback',
   },
+  mute: {
+    key: 'm',
+    description: 'Mute/Unmute',
+    category: 'playback',
+  },
 
   // Navigation
   goHome: {

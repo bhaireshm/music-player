@@ -38,6 +38,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       shortcut: KEYBOARD_SHORTCUTS.volumeDown,
       callback: () => audioPlayer.decreaseVolume(0.1), // 10% decrease
     },
+    {
+      shortcut: KEYBOARD_SHORTCUTS.mute,
+      callback: () => audioPlayer.toggleMute(),
+    },
   ]);
 
   return (

@@ -77,36 +77,6 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
     }
   }, [currentSong, onSongChange]);
 
-  // Keyboard shortcuts for volume control
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle if user is typing in an input field
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault();
-          setVolume(Math.min(1, volume + 0.05));
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setVolume(Math.max(0, volume - 0.05));
-          break;
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          toggleMute();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [volume, setVolume, toggleMute]);
-
 
 
   const togglePlayPause = () => {
@@ -332,25 +302,27 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
         {/* Right: Volume Control */}
         <Group gap="xs" style={{ flex: '0 0 130px' }} justify="flex-end">
-          <ActionIcon
-            variant="light"
-            color="accent1"
-            size={28}
-            radius="md"
-            onClick={toggleMute}
-            aria-label={isMuted ? 'Unmute' : 'Mute'}
-            styles={{
-              root: {
-                border: `1px solid ${borderColor}`,
-                '&:hover': {
-                  backgroundColor: hoverBg,
+          <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.mute} label={isMuted ? 'Unmute' : 'Mute'}>
+            <ActionIcon
+              variant="light"
+              color="accent1"
+              size={28}
+              radius="md"
+              onClick={toggleMute}
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+              styles={{
+                root: {
+                  border: `1px solid ${borderColor}`,
+                  '&:hover': {
+                    backgroundColor: hoverBg,
+                  },
+                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                 },
-                transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-              },
-            }}
-          >
-            {renderVolumeIcon(14)}
-          </ActionIcon>
+              }}
+            >
+              {renderVolumeIcon(14)}
+            </ActionIcon>
+          </ShortcutTooltip>
           <Slider
             value={volume}
             onChange={setVolume}
