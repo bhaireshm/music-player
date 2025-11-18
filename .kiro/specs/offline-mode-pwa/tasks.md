@@ -107,7 +107,8 @@
 
 ## UI Components
 
-- [ ] 12. Create InstallPrompt component
+- [x] 12. Create InstallPrompt component
+
   - Create `frontend/components/InstallPrompt.tsx`
   - Listen for beforeinstallprompt event
   - Show custom install prompt
@@ -116,6 +117,7 @@
   - Use theme colors for styling
 
   - _Requirements: 1_
+
 
 - [ ] 13. Create OfflineIndicator component
   - Create `frontend/components/OfflineIndicator.tsx`
@@ -126,6 +128,7 @@
   - Use theme colors for styling
   - _Requirements: 2, 4_
 
+
 - [ ] 14. Create DownloadButton component
   - Create `frontend/components/DownloadButton.tsx`
   - Show download icon for non-cached songs
@@ -134,6 +137,7 @@
   - Show checkmark for cached songs
   - Handle download errors
   - Use theme colors for styling
+
   - _Requirements: 3_
 
 - [ ] 15. Create UpdateNotification component
@@ -165,7 +169,6 @@
   - _Requirements: 1_
 
 - [x] 18. Add OfflineIndicator to navigation
-
 
   - Update `frontend/components/Navigation.tsx`
   - Add OfflineIndicator component

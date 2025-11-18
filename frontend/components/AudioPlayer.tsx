@@ -2,7 +2,7 @@
 
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import { Song } from '@/lib/api';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Group,
   ActionIcon,
@@ -61,6 +61,18 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
   const trackBg = theme.colors.accent1[2];
   const playerBg = `linear-gradient(135deg, ${theme.colors.primary[0]} 0%, ${theme.colors.accent2[0]} 100%)`;
 
+  // ARIA live region for volume announcements
+  const [volumeAnnouncement, setVolumeAnnouncement] = useState('');
+
+  // Announce volume changes for screen readers
+  useEffect(() => {
+    if (isMuted) {
+      setVolumeAnnouncement('Muted');
+    } else {
+      setVolumeAnnouncement(`Volume ${Math.round(volume * 100)} percent`);
+    }
+  }, [volume, isMuted]);
+
 
 
   // Load song when prop changes
@@ -115,6 +127,8 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
           zIndex: 100,
           boxShadow: theme.shadows.md,
         }}
+        role="region"
+        aria-label="Audio player"
       >
         <Text c="dimmed" size="sm" fw={500}>
           No song playing
@@ -138,7 +152,24 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         zIndex: 100,
         boxShadow: theme.shadows.md,
       }}
+      role="region"
+      aria-label="Audio player"
     >
+      {/* ARIA live region for volume announcements */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: 'absolute',
+          left: '-10000px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        }}
+      >
+        {volumeAnnouncement}
+      </div>
       {/* Desktop Layout */}
       <Group
         justify="space-between"
@@ -286,6 +317,11 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             disabled={loading || !duration}
             style={{ width: '100%' }}
             size="xs"
+            aria-label="Seek position"
+            aria-valuemin={0}
+            aria-valuemax={duration || 0}
+            aria-valuenow={currentTime}
+            aria-valuetext={`${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')} of ${Math.floor((duration || 0) / 60)}:${String(Math.floor((duration || 0) % 60)).padStart(2, '0')}`}
             styles={{
               thumb: {
                 borderWidth: 2,
@@ -309,7 +345,8 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
               size={28}
               radius="md"
               onClick={toggleMute}
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
+              aria-label={isMuted ? 'Unmute (currently muted)' : `Mute (volume at ${Math.round(volume * 100)}%)`}
+              aria-pressed={isMuted}
               styles={{
                 root: {
                   border: `1px solid ${borderColor}`,
@@ -331,7 +368,12 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             step={0.01}
             style={{ width: 55 }}
             size="xs"
-            aria-label="Volume"
+            aria-label="Volume slider"
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(volume * 100)}
+            aria-valuetext={`${Math.round(volume * 100)} percent`}
             styles={{
               thumb: {
                 borderWidth: 2,

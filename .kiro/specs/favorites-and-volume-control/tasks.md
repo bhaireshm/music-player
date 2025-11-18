@@ -258,7 +258,8 @@
   - Clean up event listener on unmount
   - _Requirements: 9_
 
-- [ ]* 10. Add accessibility features
+- [x]* 10. Add accessibility features
+
   - Add ARIA labels to all volume controls
   - Ensure keyboard navigation works properly
   - Test with screen readers
@@ -266,7 +267,8 @@
   - Add focus indicators
   - _Requirements: 14_
 
-- [ ]* 10.1 Add ARIA labels and roles
+- [x]* 10.1 Add ARIA labels and roles
+
   - Add ARIA label to volume slider: "Volume slider"
   - Add ARIA label to mute button: "Mute" / "Unmute"
   - Add ARIA live region for volume announcements
