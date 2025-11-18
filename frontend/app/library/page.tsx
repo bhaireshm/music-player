@@ -6,6 +6,7 @@ import { getSongs, Song } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import UploadModal from '@/components/UploadModal';
+import { BulkUploadModal } from '@/components/BulkUploadModal';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
 import {
   Container,
@@ -42,6 +43,7 @@ function LibraryPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
   const router = useRouter();
@@ -186,15 +188,32 @@ function LibraryPageContent() {
                   Play All
                 </Button>
               )}
-              <Button
-                leftSection={<IconUpload size={18} />}
-                onClick={() => setShowUploadModal(true)}
-                variant="gradient"
-                gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
-                size="md"
-              >
-                Upload Song
-              </Button>
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <Button
+                    leftSection={<IconUpload size={18} />}
+                    variant="gradient"
+                    gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
+                    size="md"
+                  >
+                    Upload
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<IconUpload size={16} />}
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    Single Upload
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconUpload size={16} />}
+                    onClick={() => setShowBulkUploadModal(true)}
+                  >
+                    Bulk Upload
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
             </Group>
           </Group>
         </Box>
@@ -488,6 +507,13 @@ function LibraryPageContent() {
         opened={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUploadSuccess={handleUploadSuccess}
+      />
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        opened={showBulkUploadModal}
+        onClose={() => setShowBulkUploadModal(false)}
+        onComplete={handleUploadSuccess}
       />
     </Box>
   );

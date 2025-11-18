@@ -25,6 +25,7 @@ import { notifications } from '@mantine/notifications';
 import { UploadQueueManager, UploadFile } from '@/lib/upload/uploadQueue';
 import { uploadFileWithRetry } from '@/lib/upload/uploadWorker';
 import { validateFiles, extractMetadataFromFilename } from '@/lib/upload/fileValidation';
+import { saveUploadState, clearUploadState } from '@/lib/upload/uploadPersistence';
 import { UploadProgressItem } from './UploadProgressItem';
 
 interface BulkUploadModalProps {
@@ -42,11 +43,14 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadingRef = useRef(false);
 
-  // Subscribe to queue changes
+  // Subscribe to queue changes and persist state
   useEffect(() => {
     const unsubscribe = queueManager.subscribe((state) => {
       setFiles(state.files);
       setIsPaused(state.isPaused);
+      
+      // Save state to localStorage
+      saveUploadState(state.files);
     });
 
     return unsubscribe;
@@ -139,15 +143,27 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
     uploadingRef.current = false;
     setIsUploading(false);
 
-    // Show completion notification
+    // Show completion notification with summary
     const stats = queueManager.getStats();
-    if (stats.complete > 0) {
+    if (stats.complete > 0 || stats.failed > 0) {
+      const successRate = ((stats.complete / stats.total) * 100).toFixed(0);
+      
       notifications.show({
         title: 'Upload Complete',
-        message: `Successfully uploaded ${stats.complete} of ${stats.total} files`,
+        message: `${stats.complete} of ${stats.total} files uploaded successfully (${successRate}%)${
+          stats.failed > 0 ? `\n${stats.failed} failed - click retry to try again` : ''
+        }`,
         color: stats.failed > 0 ? 'yellow' : 'green',
         icon: <IconCheck size={18} />,
+        autoClose: stats.failed > 0 ? false : 5000,
       });
+
+      // Clear completed uploads from storage after a delay
+      if (stats.failed === 0) {
+        setTimeout(() => {
+          clearUploadState();
+        }, 5000);
+      }
 
       if (onComplete) {
         onComplete();
@@ -175,6 +191,7 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
   const handleCancel = useCallback(() => {
     queueManager.clear();
     setInvalidFiles([]);
+    clearUploadState();
     onClose();
   }, [queueManager, onClose]);
 
@@ -269,9 +286,28 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
                 <Text size="sm" fw={500}>
                   Overall Progress
                 </Text>
-                <Text size="sm" c="dimmed">
-                  {stats.complete} / {stats.total} complete
-                </Text>
+                <Group gap="md">
+                  {stats.complete > 0 && (
+                    <Text size="sm" c="green">
+                      ✓ {stats.complete} complete
+                    </Text>
+                  )}
+                  {stats.failed > 0 && (
+                    <Text size="sm" c="red">
+                      ✗ {stats.failed} failed
+                    </Text>
+                  )}
+                  {stats.uploading > 0 && (
+                    <Text size="sm" c="blue">
+                      ↑ {stats.uploading} uploading
+                    </Text>
+                  )}
+                  {stats.pending > 0 && (
+                    <Text size="sm" c="dimmed">
+                      ⋯ {stats.pending} pending
+                    </Text>
+                  )}
+                </Group>
               </Group>
               <Progress value={overallProgress} size="lg" />
             </Box>
