@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ColorSchemeScript } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import ThemeProvider from "@/components/ThemeProvider";
 import ClientLayout from "@/components/ClientLayout";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./globals.css";
@@ -11,7 +12,6 @@ export const metadata: Metadata = {
   title: "Music Player - Stream Your Music",
   description: "Upload, organize, and stream your music collection",
   manifest: "/manifest.json",
-  themeColor: "#339af0",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -31,6 +31,10 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#339af0",
 };
 
 export default function RootLayout({
@@ -60,6 +64,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeProvider>
           <Notifications position="top-right" />
+          <ServiceWorkerRegistration />
           <ClientLayout>{children}</ClientLayout>
         </ThemeProvider>
       </body>
