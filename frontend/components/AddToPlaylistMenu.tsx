@@ -107,7 +107,7 @@ export default function AddToPlaylistMenu({ songId, onSuccess }: AddToPlaylistMe
 
   return (
     <>
-      <Menu.Dropdown>
+      <Menu.Dropdown p={4}>
         {loading ? (
           <Menu.Item>
             <Loader size="sm" />

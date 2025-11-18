@@ -38,17 +38,29 @@ export async function updateVisibility(
       return;
     }
 
-    // Find playlist and verify ownership
-    const playlist = await Playlist.findOne({
-      _id: playlistId,
-      ownerId: userId,
-    });
+    // Find playlist
+    const playlist = await Playlist.findById(playlistId);
 
     if (!playlist) {
       res.status(404).json({
         error: {
           code: 'PLAYLIST_NOT_FOUND',
-          message: 'Playlist not found or you do not have permission',
+          message: 'Playlist not found',
+        },
+      });
+      return;
+    }
+
+    // Verify ownership
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
+
+    if (!isOwner) {
+      res.status(403).json({
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'Only the playlist owner can change visibility',
         },
       });
       return;
@@ -561,8 +573,11 @@ export async function generateShareLink(
     }
 
     // Check if user has access to generate share link
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
     const hasAccess =
-      playlist.ownerId === userId ||
+      ownerId === userId ||
+      playlistUserId === userId ||
       playlist.collaborators.includes(userId) ||
       playlist.visibility === 'public';
 

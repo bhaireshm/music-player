@@ -59,8 +59,33 @@ export function useAuth(): UseAuthReturn {
       setLoading(true);
       await firebaseSignUp(email, password);
       // User state will be updated by onAuthStateChanged
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign up';
+    } catch (err: unknown) {
+      let errorMessage = 'Failed to sign up';
+      const error = err as { code?: string; message?: string };
+      
+      // Handle Firebase-specific error codes
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'An account with this email already exists. Please sign in instead.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address format.';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. Please use a stronger password.';
+            break;
+          default:
+            errorMessage = error.message || 'Failed to sign up';
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      console.error('Sign up error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -81,8 +106,39 @@ export function useAuth(): UseAuthReturn {
       setLoading(true);
       await firebaseSignIn(email, password);
       // User state will be updated by onAuthStateChanged
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
+    } catch (err: unknown) {
+      let errorMessage = 'Failed to sign in';
+      const error = err as { code?: string; message?: string };
+      
+      // Handle Firebase-specific error codes
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+            errorMessage = 'No account found with this email. Please sign up first.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Incorrect password. Please try again.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Invalid email address format.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
+            break;
+          case 'auth/invalid-credential':
+            errorMessage = 'Invalid email or password. Please check your credentials.';
+            break;
+          default:
+            errorMessage = error.message || 'Failed to sign in';
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      console.error('Sign in error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

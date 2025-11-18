@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getPlaylist, getSongs, updatePlaylist, Song, Playlist } from '@/lib/api';
+import { getPlaylist, getSongs, updatePlaylist, addSongToPlaylist, removeSongFromPlaylist, Song, Playlist } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
@@ -123,11 +123,7 @@ function PlaylistDetailPageContent() {
 
     setUpdating(true);
     try {
-      const playlistSongs = getPlaylistSongs();
-      const currentSongIds = playlistSongs.map(s => s.id);
-      const updatedSongIds = [...currentSongIds, songId];
-      
-      const updatedPlaylist = await updatePlaylist(playlist.id, updatedSongIds);
+      const updatedPlaylist = await addSongToPlaylist(playlist.id, songId);
       setPlaylist(updatedPlaylist);
       setShowAddSongModal(false);
       
@@ -156,12 +152,10 @@ function PlaylistDetailPageContent() {
 
     setUpdating(true);
     try {
-      const playlistSongs = getPlaylistSongs();
-      const currentSongIds = playlistSongs.map(s => s.id);
-      const updatedSongIds = currentSongIds.filter(id => id !== songId);
+      await removeSongFromPlaylist(playlist.id, songId);
       
-      const updatedPlaylist = await updatePlaylist(playlist.id, updatedSongIds);
-      setPlaylist(updatedPlaylist);
+      // Refresh the playlist data
+      await fetchData();
       
       notifications.show({
         title: 'Success',

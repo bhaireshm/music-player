@@ -6,6 +6,8 @@ import {
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
+  addSongToPlaylist,
+  removeSongFromPlaylist,
 } from '../controllers/playlistController';
 
 const router: RouterType = Router();
@@ -24,5 +26,11 @@ router.put('/:id', verifyToken, updatePlaylist);
 
 // DELETE /playlists/:id - Delete a playlist
 router.delete('/:id', verifyToken, deletePlaylist);
+
+// POST /playlists/:id/songs - Add a song to a playlist
+router.post('/:id/songs', verifyToken, addSongToPlaylist);
+
+// DELETE /playlists/:id/songs/:songId - Remove a song from a playlist
+router.delete('/:id/songs/:songId', verifyToken, removeSongFromPlaylist);
 
 export default router;

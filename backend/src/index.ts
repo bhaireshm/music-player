@@ -22,7 +22,9 @@ app.use(express.json());
 
 // Routes
 app.use('/songs', songsRouter);
-app.use('/playlists', playlistSharingRouter); // Sharing routes (must come before playlists)
+// Playlist sharing routes must come first to match specific paths like /playlists/:id/visibility
+app.use('/playlists', playlistSharingRouter);
+// General playlist routes
 app.use('/playlists', playlistsRouter);
 app.use('/search', searchRouter);
 app.use('/favorites', favoritesRouter);

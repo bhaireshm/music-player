@@ -295,7 +295,9 @@ export async function updatePlaylist(
     }
 
     // Check if user is owner or collaborator
-    const isOwner = playlist.ownerId === userId;
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
     const isCollaborator = playlist.collaborators.includes(userId);
 
     if (!isOwner && !isCollaborator) {
@@ -414,6 +416,249 @@ export async function deletePlaylist(
       error: {
         code: 'DATABASE_ERROR',
         message: 'Failed to delete playlist',
+        details: errorMessage,
+      },
+    });
+  }
+}
+
+/**
+ * POST /playlists/:id/songs
+ * Add a song to a playlist
+ */
+export async function addSongToPlaylist(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const userId = req.userId!;
+    const playlistId = req.params.id;
+    const { songId } = req.body;
+
+    // Validate playlist ID
+    if (!Types.ObjectId.isValid(playlistId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_PLAYLIST_ID',
+          message: 'Invalid playlist ID format',
+        },
+      });
+      return;
+    }
+
+    // Validate song ID
+    if (!songId || !Types.ObjectId.isValid(songId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_SONG_ID',
+          message: 'Invalid song ID format',
+        },
+      });
+      return;
+    }
+
+    // Check if song exists
+    const song = await Song.findById(songId);
+    if (!song) {
+      res.status(404).json({
+        error: {
+          code: 'SONG_NOT_FOUND',
+          message: 'Song not found',
+        },
+      });
+      return;
+    }
+
+    // Find playlist
+    const playlist = await Playlist.findById(playlistId);
+
+    if (!playlist) {
+      res.status(404).json({
+        error: {
+          code: 'PLAYLIST_NOT_FOUND',
+          message: 'Playlist not found',
+        },
+      });
+      return;
+    }
+
+    // Check if user is owner or collaborator
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
+    const isCollaborator = playlist.collaborators.includes(userId);
+
+    if (!isOwner && !isCollaborator) {
+      res.status(403).json({
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'You do not have permission to edit this playlist',
+        },
+      });
+      return;
+    }
+
+    // Check if song is already in playlist
+    const songObjectId = new Types.ObjectId(songId);
+    const songExists = playlist.songIds.some(id => id.equals(songObjectId));
+
+    if (songExists) {
+      res.status(400).json({
+        error: {
+          code: 'SONG_ALREADY_EXISTS',
+          message: 'Song is already in the playlist',
+        },
+      });
+      return;
+    }
+
+    // Add song to playlist
+    playlist.songIds.push(songObjectId);
+    playlist.updatedAt = new Date();
+    await playlist.save();
+
+    // Populate and return updated playlist
+    await playlist.populate('songIds', 'title artist mimeType createdAt');
+
+    // Get permission level
+    const permission = getPlaylistPermission(playlist, userId);
+
+    // Transform playlist to match frontend interface
+    const transformedPlaylist = {
+      id: (playlist._id as Types.ObjectId).toString(),
+      name: playlist.name,
+      userId: playlist.userId,
+      ownerId: playlist.ownerId,
+      visibility: playlist.visibility,
+      collaborators: playlist.collaborators,
+      followers: playlist.followers,
+      followerCount: playlist.followers.length,
+      permission,
+      songIds: playlist.songIds.map((song: any) => ({
+        id: song._id.toString(),
+        title: song.title,
+        artist: song.artist,
+        mimeType: song.mimeType,
+        createdAt: song.createdAt,
+      })),
+      createdAt: playlist.createdAt,
+      updatedAt: playlist.updatedAt,
+    };
+
+    res.status(200).json({ playlist: transformedPlaylist });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      error: {
+        code: 'DATABASE_ERROR',
+        message: 'Failed to add song to playlist',
+        details: errorMessage,
+      },
+    });
+  }
+}
+
+/**
+ * DELETE /playlists/:id/songs/:songId
+ * Remove a song from a playlist
+ */
+export async function removeSongFromPlaylist(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const userId = req.userId!;
+    const playlistId = req.params.id;
+    const songId = req.params.songId;
+
+    // Validate playlist ID
+    if (!Types.ObjectId.isValid(playlistId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_PLAYLIST_ID',
+          message: 'Invalid playlist ID format',
+        },
+      });
+      return;
+    }
+
+    // Validate song ID
+    if (!Types.ObjectId.isValid(songId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_SONG_ID',
+          message: 'Invalid song ID format',
+        },
+      });
+      return;
+    }
+
+    // Find playlist
+    const playlist = await Playlist.findById(playlistId);
+
+    if (!playlist) {
+      res.status(404).json({
+        error: {
+          code: 'PLAYLIST_NOT_FOUND',
+          message: 'Playlist not found',
+        },
+      });
+      return;
+    }
+
+    // Check if user is owner or collaborator
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
+    const isCollaborator = playlist.collaborators.includes(userId);
+
+    if (!isOwner && !isCollaborator) {
+      res.status(403).json({
+        error: {
+          code: 'ACCESS_DENIED',
+          message: 'You do not have permission to edit this playlist',
+        },
+      });
+      return;
+    }
+
+    // Remove song from playlist
+    const songObjectId = new Types.ObjectId(songId);
+    const initialLength = playlist.songIds.length;
+    
+    // Filter out the song - handle both ObjectId and string comparisons
+    playlist.songIds = playlist.songIds.filter(id => {
+      const idString = id.toString();
+      return idString !== songId && idString !== songObjectId.toString();
+    });
+    
+    // Check if song was actually removed
+    if (playlist.songIds.length === initialLength) {
+      res.status(404).json({
+        error: {
+          code: 'SONG_NOT_IN_PLAYLIST',
+          message: 'Song not found in playlist',
+        },
+      });
+      return;
+    }
+    
+    playlist.updatedAt = new Date();
+    await playlist.save();
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error removing song from playlist:', {
+      playlistId: req.params.id,
+      songId: req.params.songId,
+      userId: req.userId,
+      error: errorMessage,
+    });
+    res.status(500).json({
+      error: {
+        code: 'DATABASE_ERROR',
+        message: 'Failed to remove song from playlist',
         details: errorMessage,
       },
     });

@@ -20,18 +20,30 @@ export function getPlaylistPermission(
   playlist: any,
   userId: string
 ): PlaylistPermission {
-  if (playlist.ownerId === userId) {
+  // Convert to string to handle both string and ObjectId types
+  const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+  const playlistUserId = playlist.userId?.toString() || playlist.userId;
+  
+  // Check if user is the owner (check both ownerId and userId for backward compatibility)
+  if (ownerId === userId || playlistUserId === userId) {
     return PlaylistPermission.OWNER;
   }
-  if (playlist.collaborators.includes(userId)) {
+  
+  // Check if user is a collaborator
+  if (playlist.collaborators && playlist.collaborators.includes(userId)) {
     return PlaylistPermission.COLLABORATOR;
   }
+  
+  // Public playlists are viewable by anyone
   if (playlist.visibility === 'public') {
     return PlaylistPermission.FOLLOWER;
   }
-  if (playlist.visibility === 'shared' && playlist.collaborators.includes(userId)) {
+  
+  // Shared playlists are viewable by collaborators (already checked above)
+  if (playlist.visibility === 'shared' && playlist.collaborators && playlist.collaborators.includes(userId)) {
     return PlaylistPermission.COLLABORATOR;
   }
+  
   return PlaylistPermission.NONE;
 }
 
@@ -72,7 +84,11 @@ export async function checkPlaylistOwner(
     }
 
     // Check if user is owner
-    if (playlist.ownerId !== userId) {
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
+    
+    if (!isOwner) {
       res.status(403).json({
         error: {
           code: 'ACCESS_DENIED',
@@ -134,7 +150,9 @@ export async function checkPlaylistCollaborator(
     }
 
     // Check if user is owner or collaborator
-    const isOwner = playlist.ownerId === userId;
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
     const isCollaborator = playlist.collaborators.includes(userId);
 
     if (!isOwner && !isCollaborator) {
@@ -200,7 +218,9 @@ export async function checkPlaylistAccess(
     }
 
     // Check access based on visibility and user relationship
-    const isOwner = playlist.ownerId === userId;
+    const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
+    const playlistUserId = playlist.userId?.toString() || playlist.userId;
+    const isOwner = ownerId === userId || playlistUserId === userId;
     const isCollaborator = playlist.collaborators.includes(userId);
     const isPublic = playlist.visibility === 'public';
     const isShared = playlist.visibility === 'shared' && isCollaborator;

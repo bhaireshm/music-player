@@ -289,21 +289,28 @@ export async function addSongToPlaylist(
   playlistId: string,
   songId: string
 ): Promise<Playlist> {
-  // First, get the current playlist
-  const playlist = await getPlaylist(playlistId);
-  
-  // Extract song IDs (handle both populated and unpopulated songIds)
-  const currentSongIds = playlist.songIds.map((song) => 
-    typeof song === 'string' ? song : song.id
-  );
-  
-  // Add the new song if it's not already in the playlist
-  if (!currentSongIds.includes(songId)) {
-    currentSongIds.push(songId);
-  }
-  
-  // Update the playlist with the new song list
-  return updatePlaylist(playlistId, currentSongIds);
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/songs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ songId }),
+  });
+  const data = await parseResponse<{ playlist: Playlist }>(response);
+  return data.playlist;
+}
+
+/**
+ * Remove a song from a playlist
+ */
+export async function removeSongFromPlaylist(
+  playlistId: string,
+  songId: string
+): Promise<void> {
+  const response = await makeAuthenticatedRequest(`/playlists/${playlistId}/songs/${songId}`, {
+    method: 'DELETE',
+  });
+  await parseResponse<{ success: boolean }>(response);
 }
 
 /**

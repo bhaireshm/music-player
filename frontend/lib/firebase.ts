@@ -23,6 +23,7 @@ if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   };
+  console.log('Using Firebase config from environment variables');
 } else {
   // Development: Use JSON file
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -36,6 +37,7 @@ if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
     appId: firebaseConfigJson.appId,
     measurementId: firebaseConfigJson.measurementId,
   };
+  console.log('Using Firebase config from JSON file');
 }
 
 // Initialize Firebase app (only once)

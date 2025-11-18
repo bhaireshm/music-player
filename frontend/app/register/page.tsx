@@ -42,7 +42,8 @@ export default function RegisterPage() {
   return (
     <Box
       style={(theme) => ({
-        minHeight: '100vh',
+        height: '100vh',
+        overflow: 'hidden',
         background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
         display: 'flex',
         alignItems: 'center',
