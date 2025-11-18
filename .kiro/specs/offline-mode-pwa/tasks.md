@@ -2,7 +2,8 @@
 
 ## PWA Setup
 
-- [ ] 1. Create web app manifest
+- [x] 1. Create web app manifest
+
   - Create `frontend/public/manifest.json`
   - Define app name, short name, description
   - Set start URL and scope
@@ -11,7 +12,9 @@
   - Add app shortcuts for Library and Playlists
   - _Requirements: 1_
 
-- [ ] 2. Generate app icons
+- [x] 2. Generate app icons
+
+
   - Create 192x192 icon
   - Create 512x512 icon
   - Create maskable icon (512x512 with safe zone)
@@ -19,7 +22,9 @@
   - Reference icons in manifest
   - _Requirements: 1_
 
-- [ ] 3. Link manifest in app layout
+- [x] 3. Link manifest in app layout
+
+
   - Update `frontend/app/layout.tsx`
   - Add manifest link in head
   - Add theme-color meta tag
@@ -28,7 +33,8 @@
 
 ## Service Worker Implementation
 
-- [ ] 4. Create service worker file
+- [x] 4. Create service worker file
+
   - Create `frontend/public/sw.js`
   - Define cache names and versions
   - Implement install event handler
@@ -67,7 +73,8 @@
 
 ## Offline Storage
 
-- [ ] 9. Create IndexedDB wrapper
+- [x] 9. Create IndexedDB wrapper
+
   - Create `frontend/lib/offline/storage.ts`
   - Define database schema and stores
   - Implement database initialization
@@ -75,7 +82,8 @@
   - Handle database errors
   - _Requirements: 3_
 
-- [ ] 10. Create offline storage manager
+- [x] 10. Create offline storage manager
+
   - Create `frontend/lib/offline/download-manager.ts`
   - Implement `downloadSong` function
   - Implement `downloadPlaylist` function

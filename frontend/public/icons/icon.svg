@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#339af0"/>
+  
+  <!-- Music notes -->
+  <g fill="#ffffff">
+    <!-- First note stem -->
+    <rect x="280" y="128" width="40" height="256" rx="4"/>
+    
+    <!-- First note head -->
+    <ellipse cx="300" cy="384" rx="62" ry="48"/>
+    
+    <!-- Second note stem -->
+    <rect x="200" y="180" width="40" height="204" rx="4"/>
+    
+    <!-- Second note head -->
+    <ellipse cx="220" cy="384" rx="62" ry="48"/>
+    
+    <!-- Connecting beam -->
+    <rect x="240" y="180" width="80" height="40" rx="4"/>
+  </g>
+</svg>
