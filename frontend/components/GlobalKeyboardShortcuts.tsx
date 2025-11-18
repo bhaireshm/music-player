@@ -1,14 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcut';
 import { KEYBOARD_SHORTCUTS } from '@/lib/keyboardShortcuts';
+import { KeyboardShortcutsModal } from '@/components/KeyboardShortcutsModal';
 
 /**
  * Component that registers global keyboard shortcuts for navigation
  */
 export function GlobalKeyboardShortcuts() {
   const router = useRouter();
+  const [helpModalOpened, setHelpModalOpened] = useState(false);
 
   useKeyboardShortcuts([
     {
@@ -34,8 +37,16 @@ export function GlobalKeyboardShortcuts() {
         }
       },
     },
-  ]);
+    {
+      shortcut: KEYBOARD_SHORTCUTS.showHelp,
+      callback: () => setHelpModalOpened(true),
+    },
+  ], !helpModalOpened); // Disable shortcuts when modal is open
 
-  // This component doesn't render anything
-  return null;
+  return (
+    <KeyboardShortcutsModal
+      opened={helpModalOpened}
+      onClose={() => setHelpModalOpened(false)}
+    />
+  );
 }

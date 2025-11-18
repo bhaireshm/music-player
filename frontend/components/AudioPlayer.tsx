@@ -23,6 +23,8 @@ import {
   IconVolumeOff,
 } from '@tabler/icons-react';
 import FavoriteButton from '@/components/FavoriteButton';
+import { ShortcutTooltip } from '@/components/ShortcutTooltip';
+import { KEYBOARD_SHORTCUTS } from '@/lib/keyboardShortcuts';
 
 interface AudioPlayerProps {
   song: Song | null;
@@ -228,76 +230,82 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         {/* Center: Playback Controls */}
         <Box style={{ flex: '1 1 auto', maxWidth: 600 }}>
           <Group gap="xs" justify="center" mb={4}>
-            <ActionIcon
-              variant="light"
-              color="accent1"
-              size={32}
-              radius="md"
-              onClick={previous}
-              disabled={!hasPrevious}
-              aria-label="Previous song"
-              styles={{
-                root: {
-                  border: `1px solid ${borderColor}`,
-                  '&:hover': {
-                    backgroundColor: hoverBg,
-                    borderColor: hoverBorder,
+            <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.previousSong} label="Previous">
+              <ActionIcon
+                variant="light"
+                color="accent1"
+                size={32}
+                radius="md"
+                onClick={previous}
+                disabled={!hasPrevious}
+                aria-label="Previous song"
+                styles={{
+                  root: {
+                    border: `1px solid ${borderColor}`,
+                    '&:hover': {
+                      backgroundColor: hoverBg,
+                      borderColor: hoverBorder,
+                    },
+                    transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                   },
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
-            >
-              <IconPlayerSkipBack size={16} stroke={2.5} />
-            </ActionIcon>
+                }}
+              >
+                <IconPlayerSkipBack size={16} stroke={2.5} />
+              </ActionIcon>
+            </ShortcutTooltip>
 
-            <ActionIcon
-              variant="gradient"
-              gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
-              size={38}
-              radius="xl"
-              onClick={togglePlayPause}
-              disabled={loading}
-              loading={loading}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-              styles={{
-                root: {
-                  boxShadow: theme.shadows.md,
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                    boxShadow: theme.shadows.lg,
+            <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.playPause} label={isPlaying ? 'Pause' : 'Play'}>
+              <ActionIcon
+                variant="gradient"
+                gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
+                size={38}
+                radius="xl"
+                onClick={togglePlayPause}
+                disabled={loading}
+                loading={loading}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+                styles={{
+                  root: {
+                    boxShadow: theme.shadows.md,
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      boxShadow: theme.shadows.lg,
+                    },
+                    transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                   },
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
-            >
-              {isPlaying ? (
-                <IconPlayerPause size={18} stroke={2.5} />
-              ) : (
-                <IconPlayerPlay size={18} stroke={2.5} style={{ marginLeft: '2px' }} />
-              )}
-            </ActionIcon>
+                }}
+              >
+                {isPlaying ? (
+                  <IconPlayerPause size={18} stroke={2.5} />
+                ) : (
+                  <IconPlayerPlay size={18} stroke={2.5} style={{ marginLeft: '2px' }} />
+                )}
+              </ActionIcon>
+            </ShortcutTooltip>
 
-            <ActionIcon
-              variant="light"
-              color="accent1"
-              size={32}
-              radius="md"
-              onClick={next}
-              disabled={!hasNext}
-              aria-label="Next song"
-              styles={{
-                root: {
-                  border: `1px solid ${borderColor}`,
-                  '&:hover': {
-                    backgroundColor: hoverBg,
-                    borderColor: hoverBorder,
+            <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.nextSong} label="Next">
+              <ActionIcon
+                variant="light"
+                color="accent1"
+                size={32}
+                radius="md"
+                onClick={next}
+                disabled={!hasNext}
+                aria-label="Next song"
+                styles={{
+                  root: {
+                    border: `1px solid ${borderColor}`,
+                    '&:hover': {
+                      backgroundColor: hoverBg,
+                      borderColor: hoverBorder,
+                    },
+                    transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
                   },
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
-            >
-              <IconPlayerSkipForward size={16} stroke={2.5} />
-            </ActionIcon>
+                }}
+              >
+                <IconPlayerSkipForward size={16} stroke={2.5} />
+              </ActionIcon>
+            </ShortcutTooltip>
           </Group>
 
           <Slider
