@@ -26,6 +26,7 @@ export interface Song {
   albumArt?: string;
   album?: string;
   duration?: number;
+  uploadedBy?: string;
 }
 
 /**
@@ -99,6 +100,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
     // Try to parse error response
     try {
       const errorData: ErrorResponse = await response.json();
+      
+      // Log error details for debugging
+      console.error('API Error:', {
+        endpoint: response.url,
+        status: response.status,
+        code: errorData.error.code,
+        message: errorData.error.message,
+        details: errorData.error.details,
+        timestamp: new Date().toISOString(),
+      });
+      
       throw new ApiError(
         errorData.error.code,
         errorData.error.message,
@@ -109,6 +121,15 @@ async function parseResponse<T>(response: Response): Promise<T> {
       if (error instanceof ApiError) {
         throw error;
       }
+      
+      // Log parsing error
+      console.error('API Error (failed to parse):', {
+        endpoint: response.url,
+        status: response.status,
+        timestamp: new Date().toISOString(),
+        error,
+      });
+      
       throw new ApiError(
         'UNKNOWN_ERROR',
         `Request failed with status ${response.status}`

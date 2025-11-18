@@ -68,24 +68,57 @@ export async function updateVisibility(
 
     // Update visibility
     playlist.visibility = visibility;
+    
+    // Ensure ownerId is set (for backward compatibility with old playlists)
+    if (!playlist.ownerId) {
+      playlist.ownerId = playlist.userId;
+    }
+    
     playlist.updatedAt = new Date();
     await playlist.save();
+
+    // Populate songs before returning
+    await playlist.populate('songIds', 'title artist mimeType createdAt album duration albumArt uploadedBy');
 
     res.status(200).json({
       playlist: {
         id: (playlist._id as Types.ObjectId).toString(),
         name: playlist.name,
+        userId: playlist.userId,
         ownerId: playlist.ownerId,
         visibility: playlist.visibility,
         collaborators: playlist.collaborators,
         followers: playlist.followers,
-        songIds: playlist.songIds,
+        followerCount: playlist.followers.length,
+        songIds: playlist.songIds.map((song: any) => ({
+          id: song._id.toString(),
+          title: song.title,
+          artist: song.artist,
+          mimeType: song.mimeType,
+          createdAt: song.createdAt,
+          album: song.album,
+          duration: song.duration,
+          albumArt: song.albumArt,
+          uploadedBy: song.uploadedBy,
+        })),
         createdAt: playlist.createdAt,
         updatedAt: playlist.updatedAt,
       },
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Error updating playlist visibility:', {
+      userId: req.userId,
+      playlistId: req.params.id,
+      visibility: req.body.visibility,
+      operation: 'updateVisibility',
+      timestamp: new Date().toISOString(),
+      error: errorMessage,
+      stack: errorStack,
+    });
+    
     res.status(500).json({
       error: {
         code: 'DATABASE_ERROR',

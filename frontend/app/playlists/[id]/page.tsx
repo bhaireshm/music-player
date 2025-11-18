@@ -269,7 +269,8 @@ function PlaylistDetailPageContent() {
               >
                 Play All
               </Button>
-              {playlist?.permission === 'owner' || playlist?.permission === 'collaborator' ? (
+              {/* For public playlists, only owner can add songs. For private/shared, owner or collaborator can add */}
+              {(playlist?.visibility === 'public' ? playlist?.permission === 'owner' : (playlist?.permission === 'owner' || playlist?.permission === 'collaborator')) ? (
                 <Button
                   variant="light"
                   color="accent1"
@@ -456,15 +457,20 @@ function PlaylistDetailPageContent() {
                               >
                                 Song Details
                               </Menu.Item>
-                              <Menu.Divider />
-                              <Menu.Item
-                                color="red"
-                                leftSection={<IconTrash size={16} />}
-                                onClick={() => handleRemoveSong(song.id)}
-                                disabled={updating}
-                              >
-                                Remove from Playlist
-                              </Menu.Item>
+                              {/* For public playlists, only owner can remove. For private/shared, owner or collaborator can remove */}
+                              {(playlist?.visibility === 'public' ? playlist?.permission === 'owner' : (playlist?.permission === 'owner' || playlist?.permission === 'collaborator')) && (
+                                <>
+                                  <Menu.Divider />
+                                  <Menu.Item
+                                    color="red"
+                                    leftSection={<IconTrash size={16} />}
+                                    onClick={() => handleRemoveSong(song.id)}
+                                    disabled={updating}
+                                  >
+                                    Remove from Playlist
+                                  </Menu.Item>
+                                </>
+                              )}
                             </Menu.Dropdown>
                           </Menu>
                         </Group>
@@ -546,15 +552,20 @@ function PlaylistDetailPageContent() {
                           >
                             Song Details
                           </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<IconTrash size={16} />}
-                            onClick={() => handleRemoveSong(song.id)}
-                            disabled={updating}
-                          >
-                            Remove from Playlist
-                          </Menu.Item>
+                          {/* For public playlists, only owner can remove. For private/shared, owner or collaborator can remove */}
+                          {(playlist?.visibility === 'public' ? playlist?.permission === 'owner' : (playlist?.permission === 'owner' || playlist?.permission === 'collaborator')) && (
+                            <>
+                              <Menu.Divider />
+                              <Menu.Item
+                                color="red"
+                                leftSection={<IconTrash size={16} />}
+                                onClick={() => handleRemoveSong(song.id)}
+                                disabled={updating}
+                              >
+                                Remove from Playlist
+                              </Menu.Item>
+                            </>
+                          )}
                         </Menu.Dropdown>
                       </Menu>
                     </Group>

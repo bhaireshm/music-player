@@ -25,7 +25,7 @@ export async function getPlaylists(
         { followers: userId },
       ],
     })
-      .populate('songIds', 'title artist mimeType createdAt')
+      .populate('songIds', 'title artist mimeType createdAt album duration albumArt uploadedBy')
       .exec();
 
     // Transform playlists to match frontend interface
@@ -48,6 +48,10 @@ export async function getPlaylists(
             artist: song.artist,
             mimeType: song.mimeType,
             createdAt: song.createdAt,
+            album: song.album,
+            duration: song.duration,
+            albumArt: song.albumArt,
+            uploadedBy: song.uploadedBy,
           } : song
         ),
         createdAt: playlist.createdAt,
@@ -93,7 +97,7 @@ export async function getPlaylist(
 
     // Find playlist
     const playlist = await Playlist.findById(playlistId)
-      .populate('songIds', 'title artist mimeType createdAt')
+      .populate('songIds', 'title artist mimeType createdAt album duration albumArt uploadedBy')
       .exec();
 
     if (!playlist) {
@@ -136,6 +140,10 @@ export async function getPlaylist(
         artist: song.artist,
         mimeType: song.mimeType,
         createdAt: song.createdAt,
+        album: song.album,
+        duration: song.duration,
+        albumArt: song.albumArt,
+        uploadedBy: song.uploadedBy,
       })),
       createdAt: playlist.createdAt,
       updatedAt: playlist.updatedAt,
@@ -482,20 +490,34 @@ export async function addSongToPlaylist(
       return;
     }
 
-    // Check if user is owner or collaborator
+    // Check permissions based on playlist visibility
     const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
     const playlistUserId = playlist.userId?.toString() || playlist.userId;
     const isOwner = ownerId === userId || playlistUserId === userId;
     const isCollaborator = playlist.collaborators.includes(userId);
 
-    if (!isOwner && !isCollaborator) {
-      res.status(403).json({
-        error: {
-          code: 'ACCESS_DENIED',
-          message: 'You do not have permission to edit this playlist',
-        },
-      });
-      return;
+    // For public playlists, only owner can add songs
+    // For private/shared playlists, owner or collaborator can add songs
+    if (playlist.visibility === 'public') {
+      if (!isOwner) {
+        res.status(403).json({
+          error: {
+            code: 'ACCESS_DENIED',
+            message: 'Only the playlist owner can add songs to public playlists',
+          },
+        });
+        return;
+      }
+    } else {
+      if (!isOwner && !isCollaborator) {
+        res.status(403).json({
+          error: {
+            code: 'ACCESS_DENIED',
+            message: 'You do not have permission to edit this playlist',
+          },
+        });
+        return;
+      }
     }
 
     // Check if song is already in playlist
@@ -514,40 +536,62 @@ export async function addSongToPlaylist(
 
     // Add song to playlist
     playlist.songIds.push(songObjectId);
+    
+    // Ensure ownerId is set (for backward compatibility with old playlists)
+    if (!playlist.ownerId) {
+      playlist.ownerId = playlist.userId;
+    }
+    
     playlist.updatedAt = new Date();
     await playlist.save();
 
     // Populate and return updated playlist
-    await playlist.populate('songIds', 'title artist mimeType createdAt');
+    const populatedPlaylist = await playlist.populate('songIds', 'title artist mimeType createdAt album duration albumArt uploadedBy');
 
     // Get permission level
-    const permission = getPlaylistPermission(playlist, userId);
+    const permission = getPlaylistPermission(populatedPlaylist, userId);
 
     // Transform playlist to match frontend interface
     const transformedPlaylist = {
-      id: (playlist._id as Types.ObjectId).toString(),
-      name: playlist.name,
-      userId: playlist.userId,
-      ownerId: playlist.ownerId,
-      visibility: playlist.visibility,
-      collaborators: playlist.collaborators,
-      followers: playlist.followers,
-      followerCount: playlist.followers.length,
+      id: (populatedPlaylist._id as Types.ObjectId).toString(),
+      name: populatedPlaylist.name,
+      userId: populatedPlaylist.userId,
+      ownerId: populatedPlaylist.ownerId,
+      visibility: populatedPlaylist.visibility,
+      collaborators: populatedPlaylist.collaborators,
+      followers: populatedPlaylist.followers,
+      followerCount: populatedPlaylist.followers.length,
       permission,
-      songIds: playlist.songIds.map((song: any) => ({
+      songIds: populatedPlaylist.songIds.map((song: any) => ({
         id: song._id.toString(),
         title: song.title,
         artist: song.artist,
         mimeType: song.mimeType,
         createdAt: song.createdAt,
+        album: song.album,
+        duration: song.duration,
+        albumArt: song.albumArt,
+        uploadedBy: song.uploadedBy,
       })),
-      createdAt: playlist.createdAt,
-      updatedAt: playlist.updatedAt,
+      createdAt: populatedPlaylist.createdAt,
+      updatedAt: populatedPlaylist.updatedAt,
     };
 
     res.status(200).json({ playlist: transformedPlaylist });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Error adding song to playlist:', {
+      userId: req.userId,
+      playlistId: req.params.id,
+      songId: req.body.songId,
+      operation: 'addSongToPlaylist',
+      timestamp: new Date().toISOString(),
+      error: errorMessage,
+      stack: errorStack,
+    });
+    
     res.status(500).json({
       error: {
         code: 'DATABASE_ERROR',
@@ -606,20 +650,34 @@ export async function removeSongFromPlaylist(
       return;
     }
 
-    // Check if user is owner or collaborator
+    // Check permissions based on playlist visibility
     const ownerId = playlist.ownerId?.toString() || playlist.ownerId;
     const playlistUserId = playlist.userId?.toString() || playlist.userId;
     const isOwner = ownerId === userId || playlistUserId === userId;
     const isCollaborator = playlist.collaborators.includes(userId);
 
-    if (!isOwner && !isCollaborator) {
-      res.status(403).json({
-        error: {
-          code: 'ACCESS_DENIED',
-          message: 'You do not have permission to edit this playlist',
-        },
-      });
-      return;
+    // For public playlists, only owner can remove songs
+    // For private/shared playlists, owner or collaborator can remove songs
+    if (playlist.visibility === 'public') {
+      if (!isOwner) {
+        res.status(403).json({
+          error: {
+            code: 'ACCESS_DENIED',
+            message: 'Only the playlist owner can remove songs from public playlists',
+          },
+        });
+        return;
+      }
+    } else {
+      if (!isOwner && !isCollaborator) {
+        res.status(403).json({
+          error: {
+            code: 'ACCESS_DENIED',
+            message: 'You do not have permission to edit this playlist',
+          },
+        });
+        return;
+      }
     }
 
     // Remove song from playlist
@@ -643,18 +701,29 @@ export async function removeSongFromPlaylist(
       return;
     }
     
+    // Ensure ownerId is set (for backward compatibility with old playlists)
+    if (!playlist.ownerId) {
+      playlist.ownerId = playlist.userId;
+    }
+    
     playlist.updatedAt = new Date();
     await playlist.save();
 
     res.status(200).json({ success: true });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     console.error('Error removing song from playlist:', {
+      userId: req.userId,
       playlistId: req.params.id,
       songId: req.params.songId,
-      userId: req.userId,
+      operation: 'removeSongFromPlaylist',
+      timestamp: new Date().toISOString(),
       error: errorMessage,
+      stack: errorStack,
     });
+    
     res.status(500).json({
       error: {
         code: 'DATABASE_ERROR',

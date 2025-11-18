@@ -68,6 +68,6 @@ const userSchema = new Schema<IUser>({
 
 // Add index for searching users
 userSchema.index({ displayName: 1 });
-userSchema.index({ email: 1 });
+// Note: email index is already created by unique: true constraint
 
 export const User = model<IUser>('User', userSchema);
