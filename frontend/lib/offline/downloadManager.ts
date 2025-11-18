@@ -152,7 +152,7 @@ class DownloadManager {
       }
 
       // Combine chunks into a single blob
-      const audioBlob = new Blob(chunks, { type: 'audio/mpeg' });
+      const audioBlob = new Blob(chunks as BlobPart[], { type: 'audio/mpeg' });
 
       // Store in IndexedDB
       await offlineStorage.storeAudioFile(songId, audioBlob);
