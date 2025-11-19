@@ -180,7 +180,7 @@ export default function Home() {
                 </Card>
               </SimpleGrid>
 
-              <Group justify="center" gap="md">
+              <Group justify="center" gap="md" wrap="wrap">
                 <Button
                   component={Link}
                   href="/register"
@@ -189,6 +189,10 @@ export default function Home() {
                   color="accent1"
                   variant="gradient"
                   gradient={{ from: 'accent1.6', to: 'accent1.8', deg: 135 }}
+                  style={{
+                    minWidth: 140,
+                    touchAction: 'manipulation',
+                  }}
                 >
                   Get Started
                 </Button>
@@ -199,6 +203,10 @@ export default function Home() {
                   radius="sm"
                   variant="outline"
                   color="accent1"
+                  style={{
+                    minWidth: 140,
+                    touchAction: 'manipulation',
+                  }}
                 >
                   Sign In
                 </Button>

@@ -24,6 +24,8 @@ import {
   IconHeart,
   IconCompass,
   IconCloudOff,
+  IconLogin,
+  IconUserPlus,
   // IconDisc,
   // IconMicrophone,
 } from '@tabler/icons-react';
@@ -78,7 +80,7 @@ export default function Navigation() {
             pointerEvents: 'none',
           }}
         />
-        
+
         <Group h="100%" px={theme.spacing.md} justify="space-between" align="center" style={{ position: 'relative', zIndex: 1001 }} wrap="nowrap">
           {/* Logo and Burger Menu */}
           <Group gap={theme.spacing.md} align="center" wrap="nowrap">
@@ -111,19 +113,19 @@ export default function Navigation() {
                 >
                   <IconVinyl size={28} color={theme.colors.primary[0]} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <Text 
-                    size="xl" 
-                    fw={700}
-                    c={theme.colors.primary[0]}
-                    style={{
-                      letterSpacing: '0.5px',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    Naada
-                  </Text>
-                  <Text 
+                <Text
+                  size="xl"
+                  fw={700}
+                  c={theme.colors.primary[0]}
+                  visibleFrom="sm"
+                  style={{
+                    letterSpacing: '0.5px',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  Naada
+                </Text>
+                {/* <Text 
                     size="xs" 
                     c={theme.colors.primary[2]} 
                     style={{ 
@@ -132,8 +134,7 @@ export default function Navigation() {
                     }}
                   >
                     Your music, refined.
-                  </Text>
-                </div>
+                  </Text> */}
               </Group>
             </Link>
           </Group>
@@ -154,11 +155,11 @@ export default function Navigation() {
                       fontWeight: 500,
                       transition: 'all 150ms ease',
                       position: 'relative',
-                      borderBottom: isActive('/library') 
-                        ? `2px solid ${theme.colors.primary[0]}` 
+                      borderBottom: isActive('/library')
+                        ? `2px solid ${theme.colors.primary[0]}`
                         : '2px solid transparent',
-                      borderRadius: isActive('/library') 
-                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                      borderRadius: isActive('/library')
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0`
                         : theme.radius.md,
                       '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -180,11 +181,11 @@ export default function Navigation() {
                       fontWeight: 500,
                       transition: 'all 150ms ease',
                       position: 'relative',
-                      borderBottom: isActive('/favorites') 
-                        ? `2px solid ${theme.colors.primary[0]}` 
+                      borderBottom: isActive('/favorites')
+                        ? `2px solid ${theme.colors.primary[0]}`
                         : '2px solid transparent',
-                      borderRadius: isActive('/favorites') 
-                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                      borderRadius: isActive('/favorites')
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0`
                         : theme.radius.md,
                       '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -206,11 +207,11 @@ export default function Navigation() {
                       fontWeight: 500,
                       transition: 'all 150ms ease',
                       position: 'relative',
-                      borderBottom: isActive('/playlists') 
-                        ? `2px solid ${theme.colors.primary[0]}` 
+                      borderBottom: isActive('/playlists')
+                        ? `2px solid ${theme.colors.primary[0]}`
                         : '2px solid transparent',
-                      borderRadius: isActive('/playlists') 
-                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                      borderRadius: isActive('/playlists')
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0`
                         : theme.radius.md,
                       '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -284,11 +285,11 @@ export default function Navigation() {
                       fontWeight: 500,
                       transition: 'all 150ms ease',
                       position: 'relative',
-                      borderBottom: isActive('/discover') 
-                        ? `2px solid ${theme.colors.primary[0]}` 
+                      borderBottom: isActive('/discover')
+                        ? `2px solid ${theme.colors.primary[0]}`
                         : '2px solid transparent',
-                      borderRadius: isActive('/discover') 
-                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                      borderRadius: isActive('/discover')
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0`
                         : theme.radius.md,
                       '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -306,7 +307,7 @@ export default function Navigation() {
           )}
 
           {/* Right Side: Offline Indicator, User Menu or Auth Buttons */}
-          <Group gap={theme.spacing.xs}>
+          <Group gap={theme.spacing.xs} wrap="nowrap" style={{ flexShrink: 0 }}>
             {user && <OfflineIndicator />}
             {user ? (
               <Menu shadow="sm" width={180} position="bottom-end" offset={4} zIndex={1050}>
@@ -370,41 +371,89 @@ export default function Navigation() {
                 </Menu.Dropdown>
               </Menu>
             ) : (
-              <Group gap={theme.spacing.xs}>
-                <Button 
-                  variant="subtle" 
+              <Group gap="xs" wrap="nowrap" align="center" style={{ flexShrink: 0 }}>
+                {/* Login Button - Icon only on mobile, text on desktop */}
+                <Button
+                  variant="subtle"
                   onClick={() => router.push('/login')}
                   size="sm"
                   radius="md"
-                  styles={{
-                    root: {
-                      color: theme.colors.primary[0],
-                      fontWeight: 500,
-                      transition: 'all 150ms ease',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      },
-                    },
+                  hiddenFrom="sm"
+                  style={{
+                    color: theme.colors.primary[0],
+                    fontWeight: 500,
+                    padding: '8px',
+                    height: 36,
+                    width: 36,
+                    minHeight: 36,
+                    minWidth: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <IconLogin size={20} />
+                </Button>
+                <Button
+                  variant="subtle"
+                  onClick={() => router.push('/login')}
+                  size="sm"
+                  radius="md"
+                  visibleFrom="sm"
+                  style={{
+                    color: theme.colors.primary[0],
+                    fontWeight: 500,
+                    padding: '8px 16px',
+                    height: 36,
+                    minHeight: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   Login
                 </Button>
-                <Button 
+
+                {/* Sign Up Button - Icon only on mobile, text on desktop */}
+                <Button
                   variant="white"
                   onClick={() => router.push('/register')}
                   size="sm"
                   radius="md"
-                  styles={{
-                    root: {
-                      background: theme.colors.primary[0],
-                      color: theme.colors.accent1[7],
-                      fontWeight: 600,
-                      transition: 'all 150ms ease',
-                      '&:hover': {
-                        background: theme.colors.primary[1],
-                        boxShadow: theme.shadows.sm,
-                      },
-                    },
+                  hiddenFrom="sm"
+                  style={{
+                    background: theme.colors.primary[0],
+                    color: theme.colors.accent1[7],
+                    fontWeight: 600,
+                    padding: '8px',
+                    height: 36,
+                    width: 36,
+                    minHeight: 36,
+                    minWidth: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <IconUserPlus size={20} />
+                </Button>
+                <Button
+                  variant="white"
+                  onClick={() => router.push('/register')}
+                  size="sm"
+                  radius="md"
+                  visibleFrom="sm"
+                  style={{
+                    background: theme.colors.primary[0],
+                    color: theme.colors.accent1[7],
+                    fontWeight: 600,
+                    padding: '8px 16px',
+                    height: 36,
+                    minHeight: 36,
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   Sign Up
