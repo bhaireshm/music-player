@@ -1,8 +1,8 @@
 'use client';
 
-import { Song } from '@/lib/api';
+import { Song, getSongStreamUrl } from '@/lib/api';
 import { Box, Group, Text, ActionIcon, Menu, useMantineTheme } from '@mantine/core';
-import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle } from '@tabler/icons-react';
+import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle, IconDownload } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
@@ -31,6 +31,25 @@ export default function SongListItem({
   showFavoriteInMenu = false,
 }: SongListItemProps) {
   const theme = useMantineTheme();
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const songUrl = getSongStreamUrl(song.id);
+      const response = await fetch(songUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${song.title} - ${Array.isArray(song.artist) ? formatArtists(song.artist) : song.artist}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
 
   return (
     <Box
@@ -124,6 +143,13 @@ export default function SongListItem({
                 </Menu.Target>
                 <AddToPlaylistMenu songId={song.id} onSuccess={onRefresh} />
               </Menu>
+              <Menu.Item
+                leftSection={<IconDownload size={16} />}
+                onClick={handleDownload}
+                style={{ fontSize: '14px', padding: `${theme.spacing.sm} ${theme.spacing.md}` }}
+              >
+                Download
+              </Menu.Item>
               <Menu.Item
                 leftSection={<IconInfoCircle size={16} />}
                 onClick={(e) => {
