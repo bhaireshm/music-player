@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { ColorSchemeScript } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import ThemeProvider from "@/components/ThemeProvider";
 import ClientLayout from "@/components/ClientLayout";
@@ -46,8 +45,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <ColorSchemeScript />
-        
         {/* PWA Meta Tags */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

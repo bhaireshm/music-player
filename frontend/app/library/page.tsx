@@ -23,7 +23,6 @@ import {
   Group,
   Skeleton,
   useMantineTheme,
-  useMantineColorScheme,
   Badge,
 } from '@mantine/core';
 import {
@@ -98,7 +97,6 @@ function LibraryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   // Get filter parameters from URL
   const artistFilter = searchParams.get('artist');
@@ -395,7 +393,7 @@ function LibraryPageContent() {
                       key={song.id}
                       bg={
                         audioCurrentSong?.id === song.id
-                          ? (colorScheme === 'dark' ? theme.colors.accent1[9] : theme.colors.accent1[1])
+                          ? theme.colors.accent1[9]
                           : undefined
                       }
                     >
@@ -496,11 +494,11 @@ function LibraryPageContent() {
                     background:
                       audioCurrentSong?.id === song.id
                         ? `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`
-                        : (colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.secondary[0]),
+                        : theme.colors.primary[9],
                     borderRadius: theme.radius.md,
                     border: audioCurrentSong?.id === song.id 
                       ? `1px solid ${theme.colors.accent1[4]}` 
-                      : `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+                      : `1px solid ${theme.colors.secondary[8]}`,
                     transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
                   }}
                 >

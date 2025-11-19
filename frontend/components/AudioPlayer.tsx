@@ -28,6 +28,7 @@ import { KEYBOARD_SHORTCUTS } from '@/lib/keyboardShortcuts';
 import ShuffleButton from '@/components/ShuffleButton';
 import RepeatButton from '@/components/RepeatButton';
 import PlaybackSpeedControl from '@/components/PlaybackSpeedControl';
+import ArtistName from '@/components/ArtistName';
 
 interface AudioPlayerProps {
   song: Song | null;
@@ -220,14 +221,13 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
                 <FavoriteButton songId={currentSong.id} size="sm" />
               </div>
             </Group>
-            <Text 
+            <ArtistName 
+              artist={currentSong.artist}
               size="xs" 
               truncate 
               c="dimmed"
               style={{ fontSize: '11px' }}
-            >
-              {currentSong.artist}
-            </Text>
+            />
           </Box>
         </Group>
 
@@ -446,14 +446,13 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
                 </Text>
                 <FavoriteButton songId={currentSong.id} size="sm" />
               </Group>
-              <Text 
+              <ArtistName 
+                artist={currentSong.artist}
                 size="xs" 
                 truncate 
                 c="dimmed"
                 style={{ fontSize: '10px' }}
-              >
-                {currentSong.artist}
-              </Text>
+              />
             </Box>
           </Group>
 

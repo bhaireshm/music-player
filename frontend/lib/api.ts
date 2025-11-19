@@ -51,6 +51,56 @@ export interface Playlist {
 }
 
 /**
+ * Search result types
+ */
+export interface SongResult {
+  id: string;
+  title: string;
+  artist: string;
+  album?: string;
+  duration?: number;
+  matchType: 'title' | 'artist' | 'album';
+}
+
+export interface ArtistResult {
+  name: string;
+  songCount: number;
+  albums: string[];
+}
+
+export interface AlbumResult {
+  name: string;
+  artist: string;
+  songCount: number;
+  year?: number;
+}
+
+export interface PlaylistResult {
+  id: string;
+  name: string;
+  songCount: number;
+  createdAt: string;
+}
+
+export interface SearchResults {
+  query: string;
+  filter: 'all' | 'songs' | 'artists' | 'albums' | 'playlists';
+  results: {
+    songs: SongResult[];
+    artists: ArtistResult[];
+    albums: AlbumResult[];
+    playlists: PlaylistResult[];
+  };
+  totalCounts: {
+    songs: number;
+    artists: number;
+    albums: number;
+    playlists: number;
+  };
+  hasMore: boolean;
+}
+
+/**
  * Custom API error class
  */
 export class ApiError extends Error {
@@ -485,7 +535,7 @@ export async function search(
   filter: 'all' | 'songs' | 'artists' | 'albums' | 'playlists' = 'all',
   limit: number = 5,
   offset: number = 0
-): Promise<unknown> {
+): Promise<SearchResults> {
   const params = new URLSearchParams({
     q: query,
     filter,
@@ -494,7 +544,7 @@ export async function search(
   });
 
   const response = await makeAuthenticatedRequest(`/search?${params.toString()}`);
-  return parseResponse(response);
+  return parseResponse<SearchResults>(response);
 }
 
 /**

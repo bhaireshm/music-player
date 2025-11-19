@@ -141,8 +141,8 @@ export async function uploadSong(
         duplicate.artist = mergedMetadata.artist;
         duplicate.artists = artistsArray;
         duplicate.album = mergedMetadata.album;
-        duplicate.year = mergedMetadata.year;
-        duplicate.genre = mergedMetadata.genre;
+        duplicate.year = mergedMetadata.year?.toString();
+        duplicate.genre = mergedMetadata.genre?.join(', ');
         duplicate.fileKey = fileKey;
         duplicate.mimeType = mimeType;
         
@@ -185,8 +185,8 @@ export async function uploadSong(
         duplicate.artist = mergedMetadata.artist;
         duplicate.artists = artistsArray;
         duplicate.album = mergedMetadata.album;
-        duplicate.year = mergedMetadata.year;
-        duplicate.genre = mergedMetadata.genre;
+        duplicate.year = mergedMetadata.year?.toString();
+        duplicate.genre = mergedMetadata.genre?.join(', ');
         
         await duplicate.save();
         console.log('Song metadata updated');
@@ -268,8 +268,8 @@ export async function uploadSong(
       artist: mergedMetadata.artist, // Keep original for display
       artists: artistsArray, // Parsed array for search/filtering
       album: mergedMetadata.album,
-      year: mergedMetadata.year,
-      genre: mergedMetadata.genre,
+      year: mergedMetadata.year?.toString(),
+      genre: mergedMetadata.genre?.join(', '),
       fileKey,
       mimeType,
       uploadedBy: req.userId,

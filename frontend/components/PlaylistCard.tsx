@@ -10,7 +10,6 @@ import {
   Stack,
   Box,
   useMantineTheme,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { IconPlaylist, IconUsers, IconMusic, IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -25,7 +24,6 @@ interface PlaylistCardProps {
 export default function PlaylistCard({ playlist, onRefresh }: PlaylistCardProps) {
   const router = useRouter();
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(
@@ -81,8 +79,8 @@ export default function PlaylistCard({ playlist, onRefresh }: PlaylistCardProps)
       style={{
         cursor: 'pointer',
         transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
-        background: colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.primary[0],
-        border: `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+        background: theme.colors.primary[9],
+        border: `1px solid ${theme.colors.secondary[8]}`,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-4px)';
@@ -92,7 +90,7 @@ export default function PlaylistCard({ playlist, onRefresh }: PlaylistCardProps)
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = theme.shadows.sm;
-        e.currentTarget.style.borderColor = colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3];
+        e.currentTarget.style.borderColor = theme.colors.secondary[8];
       }}
       onClick={handleViewPlaylist}
     >

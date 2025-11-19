@@ -1,12 +1,13 @@
 'use client';
 
 import { Song } from '@/lib/api';
-import { Box, Group, Text, ActionIcon, Menu, useMantineTheme, useMantineColorScheme } from '@mantine/core';
+import { Box, Group, Text, ActionIcon, Menu, useMantineTheme } from '@mantine/core';
 import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
 import { getCardBackground, getCardBorder, getActiveBackground, getTransition } from '@/lib/themeColors';
+import { formatArtists } from '@/lib/artistUtils';
 
 interface SongListItemProps {
   song: Song;
@@ -30,17 +31,16 @@ export default function SongListItem({
   showFavoriteInMenu = false,
 }: SongListItemProps) {
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   return (
     <Box
       p="md"
       style={{
         background: isCurrentSong
-          ? getActiveBackground(theme, colorScheme)
-          : getCardBackground(theme, colorScheme),
+          ? getActiveBackground(theme)
+          : getCardBackground(theme),
         borderRadius: theme.radius.md,
-        border: `1px solid ${isCurrentSong ? theme.colors.accent1[4] : getCardBorder(theme, colorScheme)}`,
+        border: `1px solid ${isCurrentSong ? theme.colors.accent1[4] : getCardBorder(theme)}`,
         transition: getTransition(theme),
       }}
     >
@@ -50,7 +50,7 @@ export default function SongListItem({
             {song.title}
           </Text>
           <Text c="dimmed" size="sm" truncate>
-            {song.artist}
+            {Array.isArray(song.artist) ? formatArtists(song.artist) : song.artist}
           </Text>
           {song.album && (
             <Text c="dimmed" size="xs" truncate>

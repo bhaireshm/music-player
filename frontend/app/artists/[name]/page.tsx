@@ -18,7 +18,6 @@ import {
   Group,
   Skeleton,
   useMantineTheme,
-  useMantineColorScheme,
   Avatar,
   Badge,
   Tabs,
@@ -47,7 +46,6 @@ function ArtistDetailPageContent() {
   const [deleting, setDeleting] = useState(false);
   const { setQueue, isPlaying, currentSong } = useAudioPlayerContext();
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   const artistName = decodeURIComponent(params.name as string);
 
@@ -273,8 +271,8 @@ function ArtistDetailPageContent() {
                         radius={theme.radius.md}
                         style={{
                           cursor: 'pointer',
-                          background: getCardBackground(theme, colorScheme),
-                          border: `1px solid ${getCardBorder(theme, colorScheme)}`,
+                          background: getCardBackground(theme),
+                          border: `1px solid ${getCardBorder(theme)}`,
                         }}
                         onClick={() =>
                           router.push(`/albums/${encodeURIComponent(artistName)}/${encodeURIComponent(album)}`)

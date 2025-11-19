@@ -24,7 +24,7 @@ export default function PlaybackSpeedControl() {
   };
 
   return (
-    <Menu shadow="md" width={200} position="top" offset={8}>
+    <Menu shadow="md" width={200} position="top" offset={8} closeOnItemClick={false}>
       <Menu.Target>
         <ShortcutTooltip 
           shortcut={KEYBOARD_SHORTCUTS.speedUp} 
@@ -100,7 +100,11 @@ export default function PlaybackSpeedControl() {
                 color="accent1"
                 size="sm"
                 radius="md"
-                onClick={() => setPlaybackSpeed(speed)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPlaybackSpeed(speed);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
                 style={{
                   minWidth: 36,
                   fontWeight: speed === playbackSpeed ? 600 : 400,

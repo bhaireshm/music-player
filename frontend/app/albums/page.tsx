@@ -15,7 +15,6 @@ import {
   Box,
   Skeleton,
   useMantineTheme,
-  useMantineColorScheme,
   Image,
   Group,
 } from '@mantine/core';
@@ -31,7 +30,6 @@ function AlbumsPageContent() {
   const [displayCount, setDisplayCount] = useState(20);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   useEffect(() => {
     fetchAlbums();
@@ -151,8 +149,8 @@ function AlbumsPageContent() {
                   style={{
                     cursor: 'pointer',
                     transition: getTransition(theme),
-                    background: getCardBackground(theme, colorScheme),
-                    border: `1px solid ${getCardBorder(theme, colorScheme)}`,
+                    background: getCardBackground(theme),
+                    border: `1px solid ${getCardBorder(theme)}`,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
@@ -162,7 +160,7 @@ function AlbumsPageContent() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = theme.shadows.sm;
-                    e.currentTarget.style.borderColor = getCardBorder(theme, colorScheme);
+                    e.currentTarget.style.borderColor = getCardBorder(theme);
                   }}
                   onClick={() => handleAlbumClick(album)}
                 >

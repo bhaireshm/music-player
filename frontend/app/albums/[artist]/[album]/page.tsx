@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAlbum, AlbumDetail } from '@/lib/api';
+import { getAlbum, AlbumDetail, Song } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import SongListItem from '@/components/SongListItem';
@@ -18,7 +18,6 @@ import {
   Group,
   Skeleton,
   useMantineTheme,
-  useMantineColorScheme,
   Image,
   Badge,
 } from '@mantine/core';
@@ -40,7 +39,6 @@ function AlbumDetailPageContent() {
   const [showEditModal, setShowEditModal] = useState(false);
   const { setQueue, isPlaying, currentSong } = useAudioPlayerContext();
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   const artistName = decodeURIComponent(params.artist as string);
   const albumName = decodeURIComponent(params.album as string);
@@ -274,16 +272,12 @@ function AlbumDetailPageContent() {
                       background:
                         currentSong?.id === song.id
                           ? getGradient(theme, 'secondary')
-                          : colorScheme === 'dark'
-                          ? theme.colors.primary[9]
-                          : theme.colors.primary[0],
+                          : theme.colors.primary[9],
                       borderRadius: theme.radius.md,
                       border: `1px solid ${
                         currentSong?.id === song.id
                           ? theme.colors.accent1[4]
-                          : colorScheme === 'dark'
-                          ? theme.colors.secondary[8]
-                          : theme.colors.secondary[3]
+                          : theme.colors.secondary[8]
                       }`,
                       cursor: 'pointer',
                       transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
@@ -298,10 +292,7 @@ function AlbumDetailPageContent() {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateX(0)';
                       if (currentSong?.id !== song.id) {
-                        e.currentTarget.style.borderColor =
-                          colorScheme === 'dark'
-                            ? theme.colors.secondary[8]
-                            : theme.colors.secondary[3];
+                        e.currentTarget.style.borderColor = theme.colors.secondary[8];
                       }
                     }}
                   >

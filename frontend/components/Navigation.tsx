@@ -24,8 +24,8 @@ import {
   IconHeart,
   IconCompass,
   IconCloudOff,
-  IconDisc,
-  IconMicrophone,
+  // IconDisc,
+  // IconMicrophone,
 } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
 import SearchInput from '@/components/SearchInput';
@@ -220,7 +220,7 @@ export default function Navigation() {
                 >
                   Playlists
                 </Button>
-                <Button
+                {/* <Button
                   variant="subtle"
                   leftSection={<IconDisc size={18} />}
                   onClick={() => router.push('/albums')}
@@ -245,8 +245,8 @@ export default function Navigation() {
                   }}
                 >
                   Albums
-                </Button>
-                <Button
+                </Button> */}
+                {/* <Button
                   variant="subtle"
                   leftSection={<IconMicrophone size={18} />}
                   onClick={() => router.push('/artists')}
@@ -271,7 +271,7 @@ export default function Navigation() {
                   }}
                 >
                   Artists
-                </Button>
+                </Button> */}
                 <Button
                   variant="subtle"
                   leftSection={<IconCompass size={18} />}
@@ -351,6 +351,14 @@ export default function Navigation() {
                   >
                     Settings
                   </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconCloudOff size={14} />}
+                    onClick={() => router.push('/offline')}
+                    style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
+                  >
+                    Offline
+                  </Menu.Item>
+                  <Menu.Divider my={theme.spacing.xs} />
                   <Menu.Item
                     color="red"
                     leftSection={<IconLogout size={14} />}
@@ -490,7 +498,7 @@ export default function Navigation() {
             pointerEvents: 'auto',
           }}
         />
-        <NavLink
+        {/* <NavLink
           label="Albums"
           description="Browse by album"
           leftSection={<IconDisc size={20} />}
@@ -505,8 +513,8 @@ export default function Navigation() {
             cursor: 'pointer',
             pointerEvents: 'auto',
           }}
-        />
-        <NavLink
+        /> */}
+        {/* <NavLink
           label="Artists"
           description="Browse by artist"
           leftSection={<IconMicrophone size={20} />}
@@ -521,7 +529,7 @@ export default function Navigation() {
             cursor: 'pointer',
             pointerEvents: 'auto',
           }}
-        />
+        /> */}
         <NavLink
           label="Discover"
           description="Explore public playlists"

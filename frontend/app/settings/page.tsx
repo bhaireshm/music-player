@@ -106,18 +106,9 @@ function SettingsPageContent() {
                 <Text size="sm" fw={500} mb="xs">
                   Theme
                 </Text>
-                <SegmentedControl
-                  value={settings.theme}
-                  onChange={(value) =>
-                    setSettings({ ...settings, theme: value as 'light' | 'dark' | 'system' })
-                  }
-                  data={[
-                    { label: 'Light', value: 'light' },
-                    { label: 'Dark', value: 'dark' },
-                    { label: 'System', value: 'system' },
-                  ]}
-                  fullWidth
-                />
+                <Text size="sm" c="dimmed">
+                  Dark theme is enabled
+                </Text>
               </div>
             </Stack>
           </Card>

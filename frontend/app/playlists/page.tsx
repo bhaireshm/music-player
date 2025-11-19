@@ -22,7 +22,6 @@ import {
   TextInput,
   ActionIcon,
   useMantineTheme,
-  useMantineColorScheme,
   Tabs,
 } from '@mantine/core';
 import {
@@ -47,7 +46,6 @@ function PlaylistsPageContent() {
   const [displayCount, setDisplayCount] = useState(12);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -228,8 +226,8 @@ function PlaylistsPageContent() {
             padding="lg"
             radius={theme.radius.md}
             style={{
-              background: colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.primary[0],
-              border: `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+              background: theme.colors.primary[9],
+              border: `1px solid ${theme.colors.secondary[8]}`,
             }}
           >
             <Stack align="center" gap={theme.spacing.md} py={40}>
@@ -288,8 +286,8 @@ function PlaylistsPageContent() {
                   style={{
                     cursor: 'pointer',
                     transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
-                    background: colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.primary[0],
-                    border: `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+                    background: theme.colors.primary[9],
+                    border: `1px solid ${theme.colors.secondary[8]}`,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
@@ -299,7 +297,7 @@ function PlaylistsPageContent() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = theme.shadows.sm;
-                    e.currentTarget.style.borderColor = colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3];
+                    e.currentTarget.style.borderColor = theme.colors.secondary[8];
                   }}
                   onClick={() => handleViewPlaylist(playlist.id)}
                 >

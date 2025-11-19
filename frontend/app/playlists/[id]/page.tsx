@@ -23,7 +23,6 @@ import {
   Modal,
   Paper,
   useMantineTheme,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconPlayerPlay,
@@ -57,7 +56,6 @@ function PlaylistDetailPageContent() {
   const [isMounted, setIsMounted] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -384,7 +382,7 @@ function PlaylistDetailPageContent() {
                       key={song.id}
                       bg={
                         audioCurrentSong?.id === song.id
-                          ? (colorScheme === 'dark' ? theme.colors.accent1[9] : theme.colors.accent1[1])
+                          ? theme.colors.accent1[9]
                           : undefined
                       }
                     >
@@ -491,11 +489,11 @@ function PlaylistDetailPageContent() {
                     background:
                       audioCurrentSong?.id === song.id
                         ? `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`
-                        : (colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.secondary[0]),
+                        : theme.colors.primary[9],
                     borderRadius: theme.radius.md,
                     border: audioCurrentSong?.id === song.id 
                       ? `1px solid ${theme.colors.accent1[4]}` 
-                      : `1px solid ${colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3]}`,
+                      : `1px solid ${theme.colors.secondary[8]}`,
                     transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
                   }}
                 >

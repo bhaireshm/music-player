@@ -17,7 +17,6 @@ import {
   ThemeIcon,
   Box,
   useMantineTheme,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconUpload,
@@ -30,7 +29,6 @@ export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   // Redirect authenticated users to library
   useEffect(() => {
@@ -94,9 +92,7 @@ export default function Home() {
             radius="md"
             style={{
               width: '100%',
-              background: colorScheme === 'dark' 
-                ? `rgba(${parseInt(theme.colors.primary[9].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[9].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[9].slice(5, 7), 16)}, 0.95)`
-                : `rgba(${parseInt(theme.colors.primary[0].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[0].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[0].slice(5, 7), 16)}, 0.95)`,
+              background: `rgba(${parseInt(theme.colors.primary[9].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[9].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[9].slice(5, 7), 16)}, 0.95)`,
               backdropFilter: 'blur(10px)',
             }}
           >

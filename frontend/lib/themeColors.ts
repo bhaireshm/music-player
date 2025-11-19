@@ -14,15 +14,15 @@ export const getGradient = (theme: MantineTheme, type: 'primary' | 'secondary' |
   return gradients[type];
 };
 
-export const getCardBackground = (theme: MantineTheme, colorScheme: string) => {
-  return colorScheme === 'dark' ? theme.colors.primary[9] : theme.colors.primary[0];
+export const getCardBackground = (theme: MantineTheme) => {
+  return theme.colors.primary[9];
 };
 
-export const getCardBorder = (theme: MantineTheme, colorScheme: string) => {
-  return colorScheme === 'dark' ? theme.colors.secondary[8] : theme.colors.secondary[3];
+export const getCardBorder = (theme: MantineTheme) => {
+  return theme.colors.secondary[8];
 };
 
-export const getActiveBackground = (theme: MantineTheme, colorScheme: string) => {
+export const getActiveBackground = (theme: MantineTheme) => {
   return `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`;
 };
 

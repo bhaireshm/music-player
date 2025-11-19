@@ -15,7 +15,6 @@ import {
   Box,
   Skeleton,
   useMantineTheme,
-  useMantineColorScheme,
   Group,
   Avatar,
 } from '@mantine/core';
@@ -31,7 +30,6 @@ function ArtistsPageContent() {
   const [displayCount, setDisplayCount] = useState(20);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
 
   useEffect(() => {
     fetchArtists();
@@ -151,8 +149,8 @@ function ArtistsPageContent() {
                   style={{
                     cursor: 'pointer',
                     transition: getTransition(theme),
-                    background: getCardBackground(theme, colorScheme),
-                    border: `1px solid ${getCardBorder(theme, colorScheme)}`,
+                    background: getCardBackground(theme),
+                    border: `1px solid ${getCardBorder(theme)}`,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
@@ -162,7 +160,7 @@ function ArtistsPageContent() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = theme.shadows.sm;
-                    e.currentTarget.style.borderColor = getCardBorder(theme, colorScheme);
+                    e.currentTarget.style.borderColor = getCardBorder(theme);
                   }}
                   onClick={() => handleArtistClick(artist)}
                 >
