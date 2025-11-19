@@ -2,12 +2,15 @@
 
 import { Song, getSongStreamUrl } from '@/lib/api';
 import { Box, Group, Text, ActionIcon, Menu, useMantineTheme } from '@mantine/core';
-import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle, IconDownload } from '@tabler/icons-react';
+import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle, IconDownload, IconCheck } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
 import { getCardBackground, getCardBorder, getActiveBackground, getTransition } from '@/lib/themeColors';
 import { formatArtists } from '@/lib/artistUtils';
+import { downloadManager } from '@/lib/offline/downloadManager';
+import { notifications } from '@mantine/notifications';
+import { useState, useEffect } from 'react';
 
 interface SongListItemProps {
   song: Song;
@@ -31,23 +34,74 @@ export default function SongListItem({
   showFavoriteInMenu = false,
 }: SongListItemProps) {
   const theme = useMantineTheme();
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const checkOfflineStatus = async () => {
+      const offline = await downloadManager.isSongOffline(song.id);
+      setIsOffline(offline);
+    };
+    checkOfflineStatus();
+  }, [song.id]);
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (isOffline) {
+      // Remove from offline storage
+      try {
+        await downloadManager.removeSong(song.id);
+        setIsOffline(false);
+        notifications.show({
+          title: 'Removed from Offline',
+          message: `${song.title} removed from offline storage`,
+          color: 'blue',
+        });
+      } catch (err) {
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to remove song from offline storage',
+          color: 'red',
+        });
+      }
+      return;
+    }
+
+    // Download song for offline
     try {
       const songUrl = getSongStreamUrl(song.id);
-      const response = await fetch(songUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${song.title} - ${Array.isArray(song.artist) ? formatArtists(song.artist) : song.artist}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const artist = Array.isArray(song.artist) ? formatArtists(song.artist) : song.artist;
+      
+      await downloadManager.queueDownload(
+        song.id,
+        song.title,
+        artist,
+        songUrl,
+        1,
+        (progress) => {
+          if (progress.status === 'completed') {
+            setIsOffline(true);
+            notifications.show({
+              title: 'Download Complete',
+              message: `${song.title} is now available offline`,
+              color: 'green',
+            });
+          } else if (progress.status === 'failed') {
+            notifications.show({
+              title: 'Download Failed',
+              message: progress.error || 'Failed to download song',
+              color: 'red',
+            });
+          }
+        }
+      );
     } catch (error) {
       console.error('Download failed:', error);
+      notifications.show({
+        title: 'Download Failed',
+        message: 'Failed to download song for offline playback',
+        color: 'red',
+      });
     }
   };
 
@@ -144,11 +198,12 @@ export default function SongListItem({
                 <AddToPlaylistMenu songId={song.id} onSuccess={onRefresh} />
               </Menu>
               <Menu.Item
-                leftSection={<IconDownload size={16} />}
+                leftSection={isOffline ? <IconCheck size={16} /> : <IconDownload size={16} />}
                 onClick={handleDownload}
+                color={isOffline ? 'green' : undefined}
                 style={{ fontSize: '14px', padding: `${theme.spacing.sm} ${theme.spacing.md}` }}
               >
-                Download
+                {isOffline ? 'Remove from Offline' : 'Download for Offline'}
               </Menu.Item>
               <Menu.Item
                 leftSection={<IconInfoCircle size={16} />}

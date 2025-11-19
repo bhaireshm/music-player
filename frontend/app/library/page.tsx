@@ -34,6 +34,7 @@ import {
   IconInfoCircle,
   IconAlertCircle,
   IconX,
+  IconDownload,
 } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -41,7 +42,8 @@ import { DownloadButton } from '@/components/DownloadButton';
 import { getSongStreamUrl } from '@/lib/api';
 import InfiniteScroll from '@/components/InfiniteScroll';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
+import { IconHeart, IconHeartFilled, IconCheck } from '@tabler/icons-react';
+import { downloadManager } from '@/lib/offline/downloadManager';
 
 // Favorite Menu Item Component to avoid button nesting
 function FavoriteMenuItem({ songId }: { songId: string }) {
@@ -93,6 +95,7 @@ function LibraryPageContent() {
   const [isMounted, setIsMounted] = useState(false);
   const [displayCount, setDisplayCount] = useState(20);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [offlineSongs, setOfflineSongs] = useState<Set<string>>(new Set());
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -124,6 +127,16 @@ function LibraryPageContent() {
     try {
       const fetchedSongs = await getSongs();
       setSongs(fetchedSongs);
+      
+      // Check offline status for all songs
+      const offlineSet = new Set<string>();
+      for (const song of fetchedSongs) {
+        const isOffline = await downloadManager.isSongOffline(song.id);
+        if (isOffline) {
+          offlineSet.add(song.id);
+        }
+      }
+      setOfflineSongs(offlineSet);
     } catch (err) {
       setError('Failed to load songs. Please try again.');
       console.error('Error fetching songs:', err);
@@ -185,6 +198,75 @@ function LibraryPageContent() {
    */
   const handleSongDetails = (songId: string) => {
     router.push(`/songs/${songId}`);
+  };
+
+  /**
+   * Handle song download for offline
+   */
+  const handleDownload = async (song: Song, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const isOffline = offlineSongs.has(song.id);
+    
+    if (isOffline) {
+      // Remove from offline storage
+      try {
+        await downloadManager.removeSong(song.id);
+        setOfflineSongs(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(song.id);
+          return newSet;
+        });
+        notifications.show({
+          title: 'Removed from Offline',
+          message: `${song.title} removed from offline storage`,
+          color: 'blue',
+        });
+      } catch (err) {
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to remove song from offline storage',
+          color: 'red',
+        });
+      }
+      return;
+    }
+
+    // Download song for offline
+    try {
+      const songUrl = getSongStreamUrl(song.id);
+      
+      await downloadManager.queueDownload(
+        song.id,
+        song.title,
+        song.artist,
+        songUrl,
+        1,
+        (progress) => {
+          if (progress.status === 'completed') {
+            setOfflineSongs(prev => new Set(prev).add(song.id));
+            notifications.show({
+              title: 'Download Complete',
+              message: `${song.title} is now available offline`,
+              color: 'green',
+            });
+          } else if (progress.status === 'failed') {
+            notifications.show({
+              title: 'Download Failed',
+              message: progress.error || 'Failed to download song',
+              color: 'red',
+            });
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Download failed:', error);
+      notifications.show({
+        title: 'Download Failed',
+        message: 'Failed to download song for offline playback',
+        color: 'red',
+      });
+    }
   };
 
   return (
@@ -468,6 +550,14 @@ function LibraryPageContent() {
                                 />
                               </Menu>
                               <Menu.Item
+                                leftSection={offlineSongs.has(song.id) ? <IconCheck size={14} /> : <IconDownload size={14} />}
+                                onClick={(e) => handleDownload(song, e)}
+                                color={offlineSongs.has(song.id) ? 'green' : undefined}
+                                style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
+                              >
+                                {offlineSongs.has(song.id) ? 'Remove from Offline' : 'Download for Offline'}
+                              </Menu.Item>
+                              <Menu.Item
                                 leftSection={<IconInfoCircle size={14} />}
                                 onClick={() => handleSongDetails(song.id)}
                                 style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
@@ -576,6 +666,14 @@ function LibraryPageContent() {
                               onSuccess={fetchSongs}
                             />
                           </Menu>
+                          <Menu.Item
+                            leftSection={offlineSongs.has(song.id) ? <IconCheck size={16} /> : <IconDownload size={16} />}
+                            onClick={(e) => handleDownload(song, e)}
+                            color={offlineSongs.has(song.id) ? 'green' : undefined}
+                            style={{ fontSize: '14px', padding: `${theme.spacing.sm} ${theme.spacing.md}` }}
+                          >
+                            {offlineSongs.has(song.id) ? 'Remove from Offline' : 'Download for Offline'}
+                          </Menu.Item>
                           <Menu.Item
                             leftSection={<IconInfoCircle size={16} />}
                             onClick={(e) => {
