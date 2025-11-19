@@ -71,9 +71,13 @@ router.get('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): 
     const decodedArtistName = decodeURIComponent(artistName);
 
     // Find all songs by this artist
+    // Match by primary artist or any artist in the artists array
     const songs = await Song.find({
       uploadedBy: userId,
-      artist: decodedArtistName,
+      $or: [
+        { artist: decodedArtistName },
+        { artists: decodedArtistName }
+      ],
     }).sort({ album: 1, title: 1 });
 
     if (songs.length === 0) {
@@ -124,9 +128,13 @@ router.put('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): 
     const decodedArtistName = decodeURIComponent(artistName);
 
     // Find all songs by this artist
+    // Match by primary artist or any artist in the artists array
     const songs = await Song.find({
       uploadedBy: userId,
-      artist: decodedArtistName,
+      $or: [
+        { artist: decodedArtistName },
+        { artists: decodedArtistName }
+      ],
     });
 
     if (songs.length === 0) {
@@ -138,7 +146,10 @@ router.put('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): 
     await Song.updateMany(
       {
         uploadedBy: userId,
-        artist: decodedArtistName,
+        $or: [
+          { artist: decodedArtistName },
+          { artists: decodedArtistName }
+        ],
       },
       { $set: { artist: newArtist.trim() } }
     );
@@ -170,9 +181,13 @@ router.delete('/:artistName', verifyToken, async (req: AuthenticatedRequest, res
     const decodedArtistName = decodeURIComponent(artistName);
 
     // Delete all songs by this artist
+    // Match by primary artist or any artist in the artists array
     const result = await Song.deleteMany({
       uploadedBy: userId,
-      artist: decodedArtistName,
+      $or: [
+        { artist: decodedArtistName },
+        { artists: decodedArtistName }
+      ],
     });
 
     res.json({

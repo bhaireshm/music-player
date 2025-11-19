@@ -1,6 +1,5 @@
 import express, { Router } from 'express';
 import { Song } from '../models/Song';
-import { Album } from '../models/Album';
 import { verifyToken, AuthenticatedRequest } from '../middleware/auth';
 
 const router: Router = express.Router();
@@ -77,9 +76,13 @@ router.get('/:artistName/:albumName', verifyToken, async (req: AuthenticatedRequ
     const decodedAlbumName = decodeURIComponent(albumName);
 
     // Find all songs in this album
+    // Match by primary artist or any artist in the artists array
     const songs = await Song.find({
       uploadedBy: userId,
-      artist: decodedArtistName,
+      $or: [
+        { artist: decodedArtistName },
+        { artists: decodedArtistName }
+      ],
       album: decodedAlbumName,
     }).sort({ title: 1 });
 
@@ -126,9 +129,13 @@ router.put('/:artistName/:albumName', verifyToken, async (req: AuthenticatedRequ
     const decodedAlbumName = decodeURIComponent(albumName);
 
     // Find all songs in this album
+    // Match by primary artist or any artist in the artists array
     const songs = await Song.find({
       uploadedBy: userId,
-      artist: decodedArtistName,
+      $or: [
+        { artist: decodedArtistName },
+        { artists: decodedArtistName }
+      ],
       album: decodedAlbumName,
     });
 
@@ -148,7 +155,10 @@ router.put('/:artistName/:albumName', verifyToken, async (req: AuthenticatedRequ
     await Song.updateMany(
       {
         uploadedBy: userId,
-        artist: decodedArtistName,
+        $or: [
+          { artist: decodedArtistName },
+          { artists: decodedArtistName }
+        ],
         album: decodedAlbumName,
       },
       { $set: updateData }
@@ -182,9 +192,13 @@ router.delete('/:artistName/:albumName', verifyToken, async (req: AuthenticatedR
     const decodedAlbumName = decodeURIComponent(albumName);
 
     // Delete all songs in this album
+    // Match by primary artist or any artist in the artists array
     const result = await Song.deleteMany({
       uploadedBy: userId,
-      artist: decodedArtistName,
+      $or: [
+        { artist: decodedArtistName },
+        { artists: decodedArtistName }
+      ],
       album: decodedAlbumName,
     });
 
