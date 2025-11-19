@@ -186,7 +186,7 @@ function ArtistsPageContent() {
                           {artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}
                         </Text>
                       </Group>
-                      {artist.albums.length > 0 && (
+                      {artist.albums && artist.albums.length > 0 && (
                         <Text size="xs" c="dimmed">
                           {artist.albums.length} {artist.albums.length === 1 ? 'album' : 'albums'}
                         </Text>
