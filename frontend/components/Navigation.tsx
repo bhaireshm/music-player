@@ -24,6 +24,7 @@ import {
   IconHeart,
   IconCompass,
   IconCloudOff,
+  IconDisc,
 } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
 import SearchInput from '@/components/SearchInput';
@@ -220,6 +221,32 @@ export default function Navigation() {
                   }}
                 >
                   Playlists
+                </Button>
+                <Button
+                  variant="subtle"
+                  leftSection={<IconDisc size={18} />}
+                  onClick={() => router.push('/albums')}
+                  size="md"
+                  radius="md"
+                  styles={{
+                    root: {
+                      color: theme.colors.primary[0],
+                      fontWeight: 500,
+                      transition: 'all 150ms ease',
+                      position: 'relative',
+                      borderBottom: isActive('/albums') 
+                        ? `2px solid ${theme.colors.primary[0]}` 
+                        : '2px solid transparent',
+                      borderRadius: isActive('/albums') 
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                        : theme.radius.md,
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      },
+                    },
+                  }}
+                >
+                  Albums
                 </Button>
                 <Button
                   variant="subtle"
@@ -453,6 +480,22 @@ export default function Navigation() {
           active={isActive('/playlists')}
           onClick={() => {
             router.push('/playlists');
+            closeDrawer();
+          }}
+          style={{
+            borderRadius: theme.radius.md,
+            marginBottom: theme.spacing.sm,
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+          }}
+        />
+        <NavLink
+          label="Albums"
+          description="Browse by album"
+          leftSection={<IconDisc size={20} />}
+          active={isActive('/albums')}
+          onClick={() => {
+            router.push('/albums');
             closeDrawer();
           }}
           style={{

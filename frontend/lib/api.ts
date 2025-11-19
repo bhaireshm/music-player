@@ -27,6 +27,8 @@ export interface Song {
   album?: string;
   duration?: number;
   uploadedBy?: string;
+  year?: string;
+  genre?: string;
 }
 
 /**
