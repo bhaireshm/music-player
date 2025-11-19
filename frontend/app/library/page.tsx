@@ -39,7 +39,7 @@ import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
 import { DownloadButton } from '@/components/DownloadButton';
 import { getSongStreamUrl } from '@/lib/api';
-import Pagination from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 
 function LibraryPageContent() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -48,8 +48,8 @@ function LibraryPageContent() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [displayCount, setDisplayCount] = useState(20);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -97,15 +97,13 @@ function LibraryPageContent() {
     return true;
   });
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredSongs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedSongs = filteredSongs.slice(startIndex, endIndex);
+  // Infinite scroll calculations
+  const displayedSongs = filteredSongs.slice(0, displayCount);
+  const hasMore = displayCount < filteredSongs.length;
 
-  // Reset to page 1 when filters change
+  // Reset display count when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setDisplayCount(20);
   }, [artistFilter, albumFilter]);
 
   // Clear filters
@@ -113,14 +111,15 @@ function LibraryPageContent() {
     router.push('/library');
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleItemsPerPageChange = (items: number) => {
-    setItemsPerPage(items);
-    setCurrentPage(1);
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    // Simulate loading delay for smooth UX
+    setTimeout(() => {
+      setDisplayCount(prev => Math.min(prev + 20, filteredSongs.length));
+      setIsLoadingMore(false);
+    }, 300);
   };
 
   /**
@@ -331,7 +330,11 @@ function LibraryPageContent() {
 
         {/* Song List - Desktop Table */}
         {!loading && !error && filteredSongs.length > 0 && isMounted && (
-          <>
+          <InfiniteScroll
+            hasMore={hasMore}
+            loading={isLoadingMore}
+            onLoadMore={loadMore}
+          >
             <Box visibleFrom="md">
               <Table highlightOnHover>
                 <Table.Thead>
@@ -343,7 +346,7 @@ function LibraryPageContent() {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {paginatedSongs.map((song, index) => (
+                  {displayedSongs.map((song, index) => (
                     <Table.Tr
                       key={song.id}
                       bg={
@@ -441,7 +444,7 @@ function LibraryPageContent() {
 
             {/* Song List - Mobile Stack */}
             <Stack gap="xs" hiddenFrom="md">
-              {paginatedSongs.map((song, index) => (
+              {displayedSongs.map((song, index) => (
                 <Box
                   key={song.id}
                   p="md"
@@ -538,21 +541,7 @@ function LibraryPageContent() {
                 </Box>
               ))}
             </Stack>
-
-            {/* Pagination */}
-            {filteredSongs.length > itemsPerPage && (
-              <Box mt="xl">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={filteredSongs.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={handlePageChange}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              </Box>
-            )}
-          </>
+          </InfiniteScroll>
         )}
       </Container>
 

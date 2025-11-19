@@ -35,7 +35,7 @@ import {
 import PlayingAnimation from '@/components/PlayingAnimation';
 import { DownloadButton } from '@/components/DownloadButton';
 import { getSongStreamUrl } from '@/lib/api';
-import Pagination from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 
 interface FavoriteSong extends Song {
   favoritedAt: string;
@@ -46,8 +46,8 @@ function FavoritesPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [displayCount, setDisplayCount] = useState(20);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
   const { refreshFavorites } = useFavorites();
   const router = useRouter();
@@ -72,10 +72,10 @@ function FavoritesPageContent() {
 
     try {
       const data = await getFavorites();
-      const favoriteSongs = (data as { favorites: Array<{ song: unknown; createdAt: string }> }).favorites.map((fav) => ({
+      const favoriteSongs = (data as { favorites: Array<{ song: Song; createdAt: string }> }).favorites.map((fav) => ({
         ...fav.song,
         favoritedAt: fav.createdAt,
-      }));
+      })) as FavoriteSong[];
       setSongs(favoriteSongs);
     } catch (err) {
       setError('Failed to load favorites. Please try again.');
@@ -85,11 +85,19 @@ function FavoritesPageContent() {
     }
   };
 
-  // Pagination calculations
-  const totalPages = Math.ceil(songs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedSongs = songs.slice(startIndex, endIndex);
+  // Infinite scroll calculations
+  const displayedSongs = songs.slice(0, displayCount);
+  const hasMore = displayCount < songs.length;
+
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setDisplayCount(prev => Math.min(prev + 20, songs.length));
+      setIsLoadingMore(false);
+    }, 300);
+  };
 
   const handlePlaySong = (song: FavoriteSong, index: number) => {
     setQueue(songs, index);
@@ -102,16 +110,6 @@ function FavoritesPageContent() {
   const handleFavoriteRemoved = async () => {
     await fetchFavorites();
     await refreshFavorites();
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleItemsPerPageChange = (items: number) => {
-    setItemsPerPage(items);
-    setCurrentPage(1);
   };
 
   return (
@@ -221,7 +219,11 @@ function FavoritesPageContent() {
 
         {/* Song List - Desktop Table */}
         {!loading && !error && songs.length > 0 && isMounted && (
-          <>
+          <InfiniteScroll
+            hasMore={hasMore}
+            loading={isLoadingMore}
+            onLoadMore={loadMore}
+          >
             <Box visibleFrom="md">
               <Table highlightOnHover>
                 <Table.Thead>
@@ -233,7 +235,7 @@ function FavoritesPageContent() {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {paginatedSongs.map((song, index) => (
+                  {displayedSongs.map((song, index) => (
                     <Table.Tr
                       key={song.id}
                       bg={
@@ -324,7 +326,7 @@ function FavoritesPageContent() {
 
             {/* Song List - Mobile Stack */}
             <Stack gap="xs" hiddenFrom="md">
-              {paginatedSongs.map((song, index) => (
+              {displayedSongs.map((song, index) => (
                 <Box
                   key={song.id}
                   p="md"
@@ -372,21 +374,7 @@ function FavoritesPageContent() {
                 </Box>
               ))}
             </Stack>
-
-            {/* Pagination */}
-            {songs.length > itemsPerPage && (
-              <Box mt="xl">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={songs.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={handlePageChange}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              </Box>
-            )}
-          </>
+          </InfiniteScroll>
         )}
       </Container>
     </Box>

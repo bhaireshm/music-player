@@ -33,7 +33,7 @@ import {
   IconHeart,
 } from '@tabler/icons-react';
 
-import Pagination from '@/components/Pagination';
+import InfiniteScroll from '@/components/InfiniteScroll';
 
 function PlaylistsPageContent() {
   const router = useRouter();
@@ -44,8 +44,8 @@ function PlaylistsPageContent() {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [creating, setCreating] = useState(false);
   const [activeTab, setActiveTab] = useState<'my' | 'followed'>('my');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [displayCount, setDisplayCount] = useState(12);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   const { user } = useAuth();
@@ -75,26 +75,24 @@ function PlaylistsPageContent() {
     p.followers.includes(user?.uid || '')
   );
 
-  // Pagination for active tab
+  // Infinite scroll for active tab
   const activePlaylistsData = activeTab === 'my' ? myPlaylists : followedPlaylists;
-  const totalPages = Math.ceil(activePlaylistsData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedPlaylists = activePlaylistsData.slice(startIndex, endIndex);
+  const displayedPlaylists = activePlaylistsData.slice(0, displayCount);
+  const hasMore = displayCount < activePlaylistsData.length;
 
-  // Reset to page 1 when tab changes
+  // Reset display count when tab changes
   useEffect(() => {
-    setCurrentPage(1);
+    setDisplayCount(12);
   }, [activeTab]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleItemsPerPageChange = (items: number) => {
-    setItemsPerPage(items);
-    setCurrentPage(1);
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setDisplayCount(prev => Math.min(prev + 12, activePlaylistsData.length));
+      setIsLoadingMore(false);
+    }, 300);
   };
 
   const handleCreatePlaylist = async (e: React.FormEvent) => {
@@ -272,9 +270,13 @@ function PlaylistsPageContent() {
 
         {/* Playlist Grid */}
         {!loading && !error && activePlaylistsData.length > 0 && (
-          <>
+          <InfiniteScroll
+            hasMore={hasMore}
+            loading={isLoadingMore}
+            onLoadMore={loadMore}
+          >
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={theme.spacing.md}>
-              {paginatedPlaylists.map((playlist) => {
+              {displayedPlaylists.map((playlist) => {
               const songCount = Array.isArray(playlist.songIds) ? playlist.songIds.length : 0;
               
               return (
@@ -357,21 +359,7 @@ function PlaylistsPageContent() {
               );
             })}
           </SimpleGrid>
-
-          {/* Pagination */}
-          {activePlaylistsData.length > itemsPerPage && (
-            <Box mt="xl">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={activePlaylistsData.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
-            </Box>
-          )}
-          </>
+          </InfiniteScroll>
         )}
       </Container>
 
