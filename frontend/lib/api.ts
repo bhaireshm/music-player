@@ -246,6 +246,146 @@ export async function getSong(songId: string): Promise<Song> {
 }
 
 /**
+ * Album API
+ */
+
+export interface Album {
+  artist: string;
+  album: string;
+  songCount: number;
+  year?: string;
+  genre?: string;
+  albumArt?: string;
+  songIds?: string[];
+}
+
+export interface AlbumDetail extends Album {
+  totalDuration: number;
+  songs: Song[];
+}
+
+/**
+ * Get all albums
+ */
+export async function getAlbums(): Promise<Album[]> {
+  const response = await makeAuthenticatedRequest('/albums');
+  const data = await parseResponse<{ albums: Album[] }>(response);
+  return data.albums;
+}
+
+/**
+ * Get album details with songs
+ */
+export async function getAlbum(artist: string, album: string): Promise<AlbumDetail> {
+  const response = await makeAuthenticatedRequest(
+    `/albums/${encodeURIComponent(artist)}/${encodeURIComponent(album)}`
+  );
+  return await parseResponse<AlbumDetail>(response);
+}
+
+/**
+ * Update album metadata
+ */
+export async function updateAlbum(
+  artist: string,
+  album: string,
+  updates: {
+    newArtist?: string;
+    newAlbum?: string;
+    year?: string;
+    genre?: string;
+    albumArt?: string;
+  }
+): Promise<{ message: string; updatedSongs: number }> {
+  const response = await makeAuthenticatedRequest(
+    `/albums/${encodeURIComponent(artist)}/${encodeURIComponent(album)}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }
+  );
+  return await parseResponse<{ message: string; updatedSongs: number }>(response);
+}
+
+/**
+ * Delete an album (all songs)
+ */
+export async function deleteAlbum(
+  artist: string,
+  album: string
+): Promise<{ message: string; deletedSongs: number }> {
+  const response = await makeAuthenticatedRequest(
+    `/albums/${encodeURIComponent(artist)}/${encodeURIComponent(album)}`,
+    {
+      method: 'DELETE',
+    }
+  );
+  return await parseResponse<{ message: string; deletedSongs: number }>(response);
+}
+
+/**
+ * Artist API
+ */
+
+export interface Artist {
+  name: string;
+  songCount: number;
+  albums: string[];
+}
+
+export interface ArtistDetail {
+  artist: string;
+  songCount: number;
+  albumCount: number;
+  totalDuration: number;
+  songs: Song[];
+  albums: string[];
+}
+
+/**
+ * Get all artists
+ */
+export async function getArtists(): Promise<Artist[]> {
+  const response = await makeAuthenticatedRequest('/artists');
+  const data = await parseResponse<{ artists: Artist[] }>(response);
+  return data.artists;
+}
+
+/**
+ * Get artist details with songs
+ */
+export async function getArtist(artist: string): Promise<ArtistDetail> {
+  const response = await makeAuthenticatedRequest(`/artists/${encodeURIComponent(artist)}`);
+  return await parseResponse<ArtistDetail>(response);
+}
+
+/**
+ * Update artist name
+ */
+export async function updateArtist(
+  artist: string,
+  newArtist: string
+): Promise<{ message: string; updatedSongs: number }> {
+  const response = await makeAuthenticatedRequest(`/artists/${encodeURIComponent(artist)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ newArtist }),
+  });
+  return await parseResponse<{ message: string; updatedSongs: number }>(response);
+}
+
+/**
+ * Delete an artist (all songs)
+ */
+export async function deleteArtist(
+  artist: string
+): Promise<{ message: string; deletedSongs: number }> {
+  const response = await makeAuthenticatedRequest(`/artists/${encodeURIComponent(artist)}`, {
+    method: 'DELETE',
+  });
+  return await parseResponse<{ message: string; deletedSongs: number }>(response);
+}
+
+/**
  * Get all playlists for the current user
  */
 export async function getPlaylists(): Promise<Playlist[]> {

@@ -25,6 +25,7 @@ import {
   IconCompass,
   IconCloudOff,
   IconDisc,
+  IconMicrophone,
 } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
 import SearchInput from '@/components/SearchInput';
@@ -244,6 +245,32 @@ export default function Navigation() {
                   }}
                 >
                   Albums
+                </Button>
+                <Button
+                  variant="subtle"
+                  leftSection={<IconMicrophone size={18} />}
+                  onClick={() => router.push('/artists')}
+                  size="sm"
+                  radius="md"
+                  styles={{
+                    root: {
+                      color: theme.colors.primary[0],
+                      fontWeight: 500,
+                      transition: 'all 150ms ease',
+                      position: 'relative',
+                      borderBottom: isActive('/artists') 
+                        ? `2px solid ${theme.colors.primary[0]}` 
+                        : '2px solid transparent',
+                      borderRadius: isActive('/artists') 
+                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
+                        : theme.radius.md,
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      },
+                    },
+                  }}
+                >
+                  Artists
                 </Button>
                 <Button
                   variant="subtle"
@@ -470,6 +497,22 @@ export default function Navigation() {
           active={isActive('/albums')}
           onClick={() => {
             router.push('/albums');
+            closeDrawer();
+          }}
+          style={{
+            borderRadius: theme.radius.md,
+            marginBottom: theme.spacing.sm,
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+          }}
+        />
+        <NavLink
+          label="Artists"
+          description="Browse by artist"
+          leftSection={<IconMicrophone size={20} />}
+          active={isActive('/artists')}
+          onClick={() => {
+            router.push('/artists');
             closeDrawer();
           }}
           style={{

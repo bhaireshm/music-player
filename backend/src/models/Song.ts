@@ -4,8 +4,10 @@ export interface ISong extends Document {
   title: string;
   artist: string;
   album?: string;
-  year?: number;
-  genre?: string[];
+  year?: string;
+  genre?: string;
+  albumArt?: string;
+  duration?: number;
   fileKey: string;
   mimeType: string;
   uploadedBy: string; // Firebase UID
@@ -27,11 +29,19 @@ const songSchema = new Schema<ISong>({
     required: false,
   },
   year: {
-    type: Number,
+    type: String,
     required: false,
   },
   genre: {
-    type: [String],
+    type: String,
+    required: false,
+  },
+  albumArt: {
+    type: String,
+    required: false,
+  },
+  duration: {
+    type: Number,
     required: false,
   },
   fileKey: {

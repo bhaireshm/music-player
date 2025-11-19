@@ -55,7 +55,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res): Promise<voi
 
 /**
  * GET /api/artists/:artistName
- * Get all songs by a specific artist
+ * Get all songs and albums by a specific artist
  */
 router.get('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
@@ -76,13 +76,112 @@ router.get('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): 
       artist: decodedArtistName,
     }).sort({ album: 1, title: 1 });
 
+    if (songs.length === 0) {
+      res.status(404).json({ error: 'Artist not found' });
+      return;
+    }
+
+    // Get unique albums
+    const albums = [...new Set(songs.filter(s => s.album).map(s => s.album))];
+
+    // Calculate total duration
+    const totalDuration = songs.reduce((acc, song) => acc + (song.duration || 0), 0);
+
     res.json({
       artist: decodedArtistName,
+      songCount: songs.length,
+      albumCount: albums.length,
+      totalDuration,
       songs,
+      albums,
     });
   } catch (error) {
     console.error('Error fetching artist songs:', error);
     res.status(500).json({ error: 'Failed to fetch artist songs' });
+  }
+});
+
+/**
+ * PUT /api/artists/:artistName
+ * Update artist name (applies to all songs by this artist)
+ */
+router.put('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): Promise<void> => {
+  try {
+    const userId = req.userId;
+    const { artistName } = req.params;
+    const { newArtist } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    if (!newArtist || !newArtist.trim()) {
+      res.status(400).json({ error: 'New artist name is required' });
+      return;
+    }
+
+    const decodedArtistName = decodeURIComponent(artistName);
+
+    // Find all songs by this artist
+    const songs = await Song.find({
+      uploadedBy: userId,
+      artist: decodedArtistName,
+    });
+
+    if (songs.length === 0) {
+      res.status(404).json({ error: 'Artist not found' });
+      return;
+    }
+
+    // Update all songs by this artist
+    await Song.updateMany(
+      {
+        uploadedBy: userId,
+        artist: decodedArtistName,
+      },
+      { $set: { artist: newArtist.trim() } }
+    );
+
+    res.json({
+      message: 'Artist updated successfully',
+      updatedSongs: songs.length,
+    });
+  } catch (error) {
+    console.error('Error updating artist:', error);
+    res.status(500).json({ error: 'Failed to update artist' });
+  }
+});
+
+/**
+ * DELETE /api/artists/:artistName
+ * Delete all songs by an artist
+ */
+router.delete('/:artistName', verifyToken, async (req: AuthenticatedRequest, res): Promise<void> => {
+  try {
+    const userId = req.userId;
+    const { artistName } = req.params;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const decodedArtistName = decodeURIComponent(artistName);
+
+    // Delete all songs by this artist
+    const result = await Song.deleteMany({
+      uploadedBy: userId,
+      artist: decodedArtistName,
+    });
+
+    res.json({
+      message: 'Artist deleted successfully',
+      deletedSongs: result.deletedCount,
+    });
+  } catch (error) {
+    console.error('Error deleting artist:', error);
+    res.status(500).json({ error: 'Failed to delete artist' });
   }
 });
 

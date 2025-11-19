@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getSongs, Song } from '@/lib/api';
+import { getAlbum, AlbumDetail } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import SongListItem from '@/components/SongListItem';
+import EditAlbumModal from '@/components/EditAlbumModal';
 import {
   Container,
   Title,
@@ -26,23 +27,17 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconDisc,
+  IconEdit,
 } from '@tabler/icons-react';
 import { getGradient, getTextGradient } from '@/lib/themeColors';
-
-interface AlbumInfo {
-  artist: string;
-  album: string;
-  songs: Song[];
-  year?: string;
-  totalDuration: number;
-}
 
 function AlbumDetailPageContent() {
   const params = useParams();
   const router = useRouter();
-  const [albumInfo, setAlbumInfo] = useState<AlbumInfo | null>(null);
+  const [albumInfo, setAlbumInfo] = useState<AlbumDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const { setQueue, isPlaying, currentSong } = useAudioPlayerContext();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -51,38 +46,17 @@ function AlbumDetailPageContent() {
   const albumName = decodeURIComponent(params.album as string);
 
   useEffect(() => {
-    fetchAlbumSongs();
+    fetchAlbumData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artistName, albumName]);
 
-  const fetchAlbumSongs = async () => {
+  const fetchAlbumData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const allSongs = await getSongs();
-      const albumSongs = allSongs.filter(
-        (song) => song.artist === artistName && song.album === albumName
-      );
-
-      if (albumSongs.length === 0) {
-        setError('Album not found');
-        return;
-      }
-
-      // Calculate total duration
-      const totalDuration = albumSongs.reduce((acc, song) => acc + (song.duration || 0), 0);
-
-      // Get year from first song (if available)
-      const year = albumSongs[0]?.year;
-
-      setAlbumInfo({
-        artist: artistName,
-        album: albumName,
-        songs: albumSongs,
-        year,
-        totalDuration,
-      });
+      const data = await getAlbum(artistName, albumName);
+      setAlbumInfo(data);
     } catch (err) {
       setError('Failed to load album. Please try again.');
       console.error('Error fetching album:', err);
