@@ -139,11 +139,8 @@ export default function Navigation() {
 
           {/* Search and Desktop Navigation Links */}
           {user && (
-            <Group gap={theme.spacing.md} visibleFrom="md" style={{ flex: 1, maxWidth: 800 }}>
-              <div style={{ flex: 1, maxWidth: 400 }}>
-                <SearchInput />
-              </div>
-              <Group gap={theme.spacing.xs}>
+            <Group gap={theme.spacing.sm} visibleFrom="md" style={{ flex: 1, justifyContent: 'space-between' }}>
+              <Group gap={theme.spacing.xs} style={{ flex: '0 0 auto' }}>
                 <Button
                   variant="subtle"
                   leftSection={<IconMusic size={18} />}
@@ -174,7 +171,7 @@ export default function Navigation() {
                   variant="subtle"
                   leftSection={<IconHeart size={18} />}
                   onClick={() => router.push('/favorites')}
-                  size="md"
+                  size="sm"
                   radius="md"
                   styles={{
                     root: {
@@ -200,7 +197,7 @@ export default function Navigation() {
                   variant="subtle"
                   leftSection={<IconPlaylist size={18} />}
                   onClick={() => router.push('/playlists')}
-                  size="md"
+                  size="sm"
                   radius="md"
                   styles={{
                     root: {
@@ -226,7 +223,7 @@ export default function Navigation() {
                   variant="subtle"
                   leftSection={<IconDisc size={18} />}
                   onClick={() => router.push('/albums')}
-                  size="md"
+                  size="sm"
                   radius="md"
                   styles={{
                     root: {
@@ -252,7 +249,7 @@ export default function Navigation() {
                   variant="subtle"
                   leftSection={<IconCompass size={18} />}
                   onClick={() => router.push('/discover')}
-                  size="md"
+                  size="sm"
                   radius="md"
                   styles={{
                     root: {
@@ -274,33 +271,10 @@ export default function Navigation() {
                 >
                   Discover
                 </Button>
-                <Button
-                  variant="subtle"
-                  leftSection={<IconCloudOff size={18} />}
-                  onClick={() => router.push('/offline')}
-                  size="md"
-                  radius="md"
-                  styles={{
-                    root: {
-                      color: theme.colors.primary[0],
-                      fontWeight: 500,
-                      transition: 'all 150ms ease',
-                      position: 'relative',
-                      borderBottom: isActive('/offline') 
-                        ? `2px solid ${theme.colors.primary[0]}` 
-                        : '2px solid transparent',
-                      borderRadius: isActive('/offline') 
-                        ? `${theme.radius.md} ${theme.radius.md} 0 0` 
-                        : theme.radius.md,
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      },
-                    },
-                  }}
-                >
-                  Offline
-                </Button>
               </Group>
+              <div style={{ flex: '0 0 auto', maxWidth: 350, minWidth: 200 }}>
+                <SearchInput />
+              </div>
             </Group>
           )}
 
