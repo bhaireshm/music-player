@@ -4,11 +4,31 @@ import { createContext, useContext, ReactNode } from 'react';
 import { useAudioPlayer, UseAudioPlayerReturn } from '@/hooks/useAudioPlayer';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcut';
 import { KEYBOARD_SHORTCUTS } from '@/lib/keyboardShortcuts';
+import {
+  useMediaMetadata,
+  useMediaSessionActions,
+  useMediaSessionPlaybackState
+} from '@/hooks/useMediaMetadata';
 
 const AudioPlayerContext = createContext<UseAudioPlayerReturn | undefined>(undefined);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioPlayer = useAudioPlayer();
+
+  // Update document title and metadata when song changes
+  useMediaMetadata(audioPlayer.currentSong, audioPlayer.isPlaying);
+
+  // Set up Media Session API action handlers for mobile controls
+  useMediaSessionActions(
+    audioPlayer.play,
+    audioPlayer.pause,
+    audioPlayer.next,
+    audioPlayer.previous,
+    audioPlayer.seek
+  );
+
+  // Update Media Session playback state
+  useMediaSessionPlaybackState(audioPlayer.isPlaying);
 
   // Register playback keyboard shortcuts
   useKeyboardShortcuts([

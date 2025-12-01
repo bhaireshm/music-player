@@ -9,15 +9,15 @@ import "@mantine/notifications/styles.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Naada - Your Music Library",
+  title: "Naada Music - Your Personal Music Library",
   description: "Upload, organize, and stream your personal music collection",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Naada",
+    title: "Naada Music",
   },
-  applicationName: "Naada",
+  applicationName: "Naada Music",
   formatDetection: {
     telephone: false,
   },
@@ -30,6 +30,17 @@ export const metadata: Metadata = {
       { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
+  },
+  openGraph: {
+    title: "Naada Music - Your Personal Music Library",
+    description: "Upload, organize, and stream your personal music collection",
+    type: "website",
+    siteName: "Naada Music",
+  },
+  twitter: {
+    card: "summary",
+    title: "Naada Music",
+    description: "Upload, organize, and stream your personal music collection",
   },
 };
 
@@ -50,7 +61,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Naada" />
-        
+
         {/* Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
