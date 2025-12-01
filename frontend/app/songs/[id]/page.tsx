@@ -26,17 +26,18 @@ import {
   IconArrowLeft,
   IconAlertCircle,
   IconMusic,
+  IconList,
 } from '@tabler/icons-react';
 
 function SongDetailsPageContent() {
   const params = useParams();
   const router = useRouter();
   const songId = params.id as string;
-  
+
   const [song, setSong] = useState<Song | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { setQueue, currentSong: audioCurrentSong } = useAudioPlayerContext();
+  const { setQueue, currentSong: audioCurrentSong, addToQueue } = useAudioPlayerContext();
 
   useEffect(() => {
     if (songId) {
@@ -213,17 +214,27 @@ function SongDetailsPageContent() {
                       leftSection={<IconPlayerPlay size={18} />}
                       onClick={handlePlaySong}
                       variant={isCurrentlyPlaying ? 'filled' : 'light'}
-                      size="md"
                     >
                       {isCurrentlyPlaying ? 'Playing' : 'Play'}
                     </Button>
-                    
-                    <Menu position="bottom-start" shadow="md">
+
+                    <Button
+                      leftSection={<IconList size={18} />}
+                      onClick={() => {
+                        if (song) {
+                          addToQueue(song);
+                        }
+                      }}
+                      variant="light"
+                    >
+                      Add to Queue
+                    </Button>
+
+                    <Menu position="bottom" shadow="md">
                       <Menu.Target>
                         <Button
                           leftSection={<IconPlaylistAdd size={18} />}
                           variant="outline"
-                          size="md"
                         >
                           Add to Playlist
                         </Button>
@@ -318,7 +329,21 @@ function SongDetailsPageContent() {
                   >
                     {isCurrentlyPlaying ? 'Playing' : 'Play'}
                   </Button>
-                  
+
+                  <Button
+                    leftSection={<IconList size={18} />}
+                    onClick={() => {
+                      if (song) {
+                        addToQueue(song);
+                      }
+                    }}
+                    variant="light"
+                    size="md"
+                    fullWidth
+                  >
+                    Add to Queue
+                  </Button>
+
                   <Menu position="bottom" shadow="md">
                     <Menu.Target>
                       <Button
@@ -335,10 +360,11 @@ function SongDetailsPageContent() {
                 </Stack>
               </Stack>
             </Stack>
-          </Paper>
-        )}
-      </Container>
-    </Box>
+          </Paper >
+        )
+        }
+      </Container >
+    </Box >
   );
 }
 

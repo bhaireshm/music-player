@@ -49,7 +49,7 @@ export default function EditAlbumModal({
 
     setSaving(true);
     try {
-      const updates: any = {};
+      const updates: Record<string, string> = {};
       if (newArtist !== artist) updates.newArtist = newArtist.trim();
       if (newAlbum !== album) updates.newAlbum = newAlbum.trim();
       if (newYear !== year) updates.year = newYear.trim();

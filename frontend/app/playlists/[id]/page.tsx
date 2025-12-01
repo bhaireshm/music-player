@@ -36,6 +36,7 @@ import {
   IconPlus,
   IconShare,
   IconUsers,
+  IconList,
 } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import SharePlaylistModal from '@/components/SharePlaylistModal';
@@ -54,7 +55,7 @@ function PlaylistDetailPageContent() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
+  const { setQueue, isPlaying, currentSong: audioCurrentSong, addToQueue } = useAudioPlayerContext();
   const theme = useMantineTheme();
 
   // Prevent hydration mismatch
@@ -95,12 +96,12 @@ function PlaylistDetailPageContent() {
    */
   const getPlaylistSongs = (): Song[] => {
     if (!playlist) return [];
-    
+
     // Check if songIds are populated with Song objects
     if (playlist.songIds.length > 0 && typeof playlist.songIds[0] === 'object') {
       return playlist.songIds as Song[];
     }
-    
+
     return [];
   };
 
@@ -124,7 +125,7 @@ function PlaylistDetailPageContent() {
       const updatedPlaylist = await addSongToPlaylist(playlist.id, songId);
       setPlaylist(updatedPlaylist);
       setShowAddSongModal(false);
-      
+
       notifications.show({
         title: 'Success',
         message: 'Song added to playlist',
@@ -151,10 +152,10 @@ function PlaylistDetailPageContent() {
     setUpdating(true);
     try {
       await removeSongFromPlaylist(playlist.id, songId);
-      
+
       // Refresh the playlist data
       await fetchData();
-      
+
       notifications.show({
         title: 'Success',
         message: 'Song removed from playlist',
@@ -223,7 +224,7 @@ function PlaylistDetailPageContent() {
               <IconArrowLeft size={22} />
             </ActionIcon>
             <Box style={{ flex: 1 }}>
-              <Title 
+              <Title
                 order={1}
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
@@ -428,6 +429,19 @@ function PlaylistDetailPageContent() {
                             </Menu.Target>
                             <Menu.Dropdown>
                               <Menu.Item
+                                leftSection={<IconList size={16} />}
+                                onClick={() => {
+                                  addToQueue(song);
+                                  notifications.show({
+                                    title: 'Added to Queue',
+                                    message: `${song.title} added to queue`,
+                                    color: 'green',
+                                  });
+                                }}
+                              >
+                                Add to Queue
+                              </Menu.Item>
+                              <Menu.Item
                                 leftSection={<IconPlayerPlay size={16} />}
                                 onClick={() => handlePlaySong(song, index)}
                               >
@@ -491,8 +505,8 @@ function PlaylistDetailPageContent() {
                         ? `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`
                         : theme.colors.primary[9],
                     borderRadius: theme.radius.md,
-                    border: audioCurrentSong?.id === song.id 
-                      ? `1px solid ${theme.colors.accent1[4]}` 
+                    border: audioCurrentSong?.id === song.id
+                      ? `1px solid ${theme.colors.accent1[4]}`
                       : `1px solid ${theme.colors.secondary[8]}`,
                     transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
                   }}
@@ -522,6 +536,19 @@ function PlaylistDetailPageContent() {
                           </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>
+                          <Menu.Item
+                            leftSection={<IconList size={16} />}
+                            onClick={() => {
+                              addToQueue(song);
+                              notifications.show({
+                                title: 'Added to Queue',
+                                message: `${song.title} added to queue`,
+                                color: 'green',
+                              });
+                            }}
+                          >
+                            Add to Queue
+                          </Menu.Item>
                           <Menu.Item
                             leftSection={<IconPlayerPlay size={16} />}
                             onClick={() => handlePlaySong(song, index)}

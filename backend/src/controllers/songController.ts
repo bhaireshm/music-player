@@ -101,21 +101,21 @@ export async function uploadSong(
     if (duplicate) {
       // Check if the file still exists in R2
       const fileStillExists = await fileExists(duplicate.fileKey);
-      
+
       if (!fileStillExists) {
         // File was deleted from R2 but DB entry remains - update the existing record
         console.log('Duplicate found but file missing in R2, updating existing record...');
-        
+
         // Generate new file key
         const fileExtension = filename.split('.').pop() || 'mp3';
         const fileKey = `songs/${randomUUID()}.${fileExtension}`;
-        
+
         // Prepare custom metadata for R2
         const r2Metadata: Record<string, string> = {
           title: mergedMetadata.title,
           artist: mergedMetadata.artist,
         };
-        
+
         if (mergedMetadata.album) {
           r2Metadata.album = mergedMetadata.album;
         }
@@ -128,14 +128,14 @@ export async function uploadSong(
         if (extractedMetadata.duration) {
           r2Metadata.duration = extractedMetadata.duration.toString();
         }
-        
+
         // Upload file to R2
         console.log('Uploading file to R2...');
         await uploadFile(fileBuffer, fileKey, mimeType, r2Metadata);
-        
+
         // Parse multiple artists
         const artistsArray = parseArtists(mergedMetadata.artist);
-        
+
         // Update existing song record
         duplicate.title = mergedMetadata.title;
         duplicate.artist = mergedMetadata.artist;
@@ -145,10 +145,10 @@ export async function uploadSong(
         duplicate.genre = mergedMetadata.genre?.join(', ');
         duplicate.fileKey = fileKey;
         duplicate.mimeType = mimeType;
-        
+
         await duplicate.save();
         console.log('Existing song record updated with new file and metadata');
-        
+
         res.status(200).json({
           song: {
             id: duplicate._id,
@@ -168,15 +168,15 @@ export async function uploadSong(
         });
         return;
       }
-      
+
       // Check if metadata has changed
-      const metadataChanged = 
+      const metadataChanged =
         duplicate.title !== mergedMetadata.title ||
         duplicate.artist !== mergedMetadata.artist ||
         duplicate.album !== mergedMetadata.album ||
         duplicate.year !== mergedMetadata.year ||
         JSON.stringify(duplicate.genre) !== JSON.stringify(mergedMetadata.genre);
-      
+
       if (metadataChanged) {
         // Update metadata only
         console.log('Duplicate found with different metadata, updating...');
@@ -187,10 +187,10 @@ export async function uploadSong(
         duplicate.album = mergedMetadata.album;
         duplicate.year = mergedMetadata.year?.toString();
         duplicate.genre = mergedMetadata.genre?.join(', ');
-        
+
         await duplicate.save();
         console.log('Song metadata updated');
-        
+
         res.status(200).json({
           song: {
             id: duplicate._id,
@@ -210,7 +210,7 @@ export async function uploadSong(
         });
         return;
       }
-      
+
       // Exact duplicate - file exists and metadata is the same
       res.status(409).json({
         error: {
@@ -240,7 +240,7 @@ export async function uploadSong(
       title: mergedMetadata.title,
       artist: mergedMetadata.artist,
     };
-    
+
     if (mergedMetadata.album) {
       r2Metadata.album = mergedMetadata.album;
     }
@@ -261,7 +261,7 @@ export async function uploadSong(
 
     // Parse multiple artists from the artist string
     const artistsArray = parseArtists(mergedMetadata.artist);
-    
+
     // Save song metadata to database
     const song = new Song({
       title: mergedMetadata.title,
@@ -298,9 +298,9 @@ export async function uploadSong(
     });
   } catch (error) {
     console.error('Song upload error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     res.status(500).json({
       error: {
         code: 'UPLOAD_FAILED',
@@ -335,9 +335,9 @@ export async function getAllSongs(
     });
   } catch (error) {
     console.error('Get songs error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     res.status(500).json({
       error: {
         code: 'FETCH_FAILED',
@@ -361,7 +361,7 @@ export async function getSongMetadata(
 
     // Fetch song metadata from database
     const song = await Song.findById(id);
-    
+
     if (!song) {
       res.status(404).json({
         error: {
@@ -387,9 +387,9 @@ export async function getSongMetadata(
     });
   } catch (error) {
     console.error('Get song metadata error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     res.status(500).json({
       error: {
         code: 'FETCH_FAILED',
@@ -413,7 +413,7 @@ export async function streamSong(
 
     // Fetch song metadata from database
     const song = await Song.findById(id);
-    
+
     if (!song) {
       res.status(404).json({
         error: {
@@ -482,9 +482,9 @@ export async function streamSong(
     }
   } catch (error) {
     console.error('Song streaming error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     // Only send JSON error if headers haven't been sent yet
     if (!res.headersSent) {
       res.status(500).json({
@@ -498,5 +498,74 @@ export async function streamSong(
       // If headers were already sent, just end the response
       res.end();
     }
+  }
+}
+
+/**
+ * Update song metadata
+ * PUT /songs/:id
+ */
+export async function updateSong(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { title, artist, album, year, genre, lyrics } = req.body;
+
+    // Find song by ID
+    const song = await Song.findById(id);
+
+    if (!song) {
+      res.status(404).json({
+        error: {
+          code: 'SONG_NOT_FOUND',
+          message: 'Song not found',
+        },
+      });
+      return;
+    }
+
+    // Check if user is the uploader (optional, depending on requirements)
+    // if (song.uploadedBy.toString() !== req.userId) { ... }
+
+    // Update fields
+    if (title) song.title = title;
+    if (artist) {
+      song.artist = artist;
+      song.artists = parseArtists(artist);
+    }
+    if (album !== undefined) song.album = album;
+    if (year !== undefined) song.year = year;
+    if (genre !== undefined) song.genre = genre;
+    if (lyrics !== undefined) song.lyrics = lyrics;
+
+    await song.save();
+
+    res.status(200).json({
+      song: {
+        id: song._id,
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        year: song.year,
+        genre: song.genre,
+        lyrics: song.lyrics,
+        mimeType: song.mimeType,
+        createdAt: song.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Update song error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    res.status(500).json({
+      error: {
+        code: 'UPDATE_FAILED',
+        message: 'Failed to update song',
+        details: errorMessage,
+      },
+    });
   }
 }

@@ -9,6 +9,7 @@ export interface ISong extends Document {
   genre?: string;
   albumArt?: string;
   duration?: number;
+  lyrics?: string;
   fileKey: string;
   mimeType: string;
   uploadedBy: string; // Firebase UID
@@ -47,6 +48,10 @@ const songSchema = new Schema<ISong>({
   },
   duration: {
     type: Number,
+    required: false,
+  },
+  lyrics: {
+    type: String,
     required: false,
   },
   fileKey: {

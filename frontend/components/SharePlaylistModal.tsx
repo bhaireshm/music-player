@@ -69,13 +69,13 @@ export default function SharePlaylistModal({
     try {
       const updatedPlaylist = await updatePlaylistVisibility(playlist.id, visibility);
       onUpdate(updatedPlaylist);
-      
+
       notifications.show({
         title: 'Success',
         message: 'Playlist visibility updated',
         color: 'green',
       });
-      
+
       onClose();
     } catch (error) {
       console.error('Error updating visibility:', error);
@@ -97,7 +97,7 @@ export default function SharePlaylistModal({
       const updatedPlaylist = await addCollaborator(playlist.id, collaboratorInput.trim());
       onUpdate(updatedPlaylist);
       setCollaboratorInput('');
-      
+
       notifications.show({
         title: 'Success',
         message: 'Collaborator added',
@@ -124,7 +124,7 @@ export default function SharePlaylistModal({
         collaborators: playlist.collaborators.filter((id) => id !== collaboratorId),
       };
       onUpdate(updatedPlaylist);
-      
+
       notifications.show({
         title: 'Success',
         message: 'Collaborator removed',
@@ -146,7 +146,7 @@ export default function SharePlaylistModal({
     navigator.clipboard.writeText(shareLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    
+
     notifications.show({
       title: 'Copied',
       message: 'Share link copied to clipboard',
@@ -174,7 +174,7 @@ export default function SharePlaylistModal({
           </Text>
           <SegmentedControl
             value={visibility}
-            onChange={(value) => setVisibility(value as any)}
+            onChange={(value) => setVisibility(value as 'private' | 'shared' | 'public')}
             data={[
               { label: 'Private', value: 'private' },
               { label: 'Shared', value: 'shared' },
@@ -236,7 +236,7 @@ export default function SharePlaylistModal({
                 Add
               </Button>
             </Group>
-            
+
             {playlist.collaborators.length > 0 && (
               <Stack gap="xs">
                 {playlist.collaborators.map((collaboratorId) => (

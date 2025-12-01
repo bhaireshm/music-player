@@ -8,21 +8,23 @@ import {
   Stack,
   Box,
   Card,
-  SegmentedControl,
   Switch,
   Button,
   Group,
   Divider,
+  Slider,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getUserSettings, updateUserSettings, UserSettings, getUserProfile } from '@/lib/api';
+import { getUserSettings, updateUserSettings, UserSettings, getUserProfile, UserProfile } from '@/lib/api';
+import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 
 function SettingsPageContent() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { crossfadeDuration, setCrossfadeDuration } = useAudioPlayerContext();
 
   useEffect(() => {
     fetchSettings();
@@ -50,7 +52,7 @@ function SettingsPageContent() {
     setSaving(true);
     try {
       await updateUserSettings(settings);
-      
+
       notifications.show({
         title: 'Success',
         message: 'Settings saved successfully',
@@ -108,6 +110,49 @@ function SettingsPageContent() {
                 </Text>
                 <Text size="sm" c="dimmed">
                   Dark theme is enabled
+                </Text>
+              </div>
+            </Stack>
+          </Card>
+
+          {/* Playback Settings */}
+          <Card shadow="sm" padding="lg" radius="md">
+            <Stack gap="md">
+              <div>
+                <Text size="lg" fw={600} mb="xs">
+                  Playback
+                </Text>
+                <Text size="sm" c="dimmed">
+                  Configure playback behavior
+                </Text>
+              </div>
+
+              <div>
+                <Group justify="space-between" mb="xs">
+                  <Text size="sm" fw={500}>
+                    Crossfade Duration
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    {crossfadeDuration}s
+                  </Text>
+                </Group>
+                <Slider
+                  value={crossfadeDuration}
+                  onChange={setCrossfadeDuration}
+                  min={0}
+                  max={12}
+                  step={1}
+                  marks={[
+                    { value: 0, label: 'Off' },
+                    { value: 3, label: '3s' },
+                    { value: 6, label: '6s' },
+                    { value: 9, label: '9s' },
+                    { value: 12, label: '12s' },
+                  ]}
+                  mb="md"
+                />
+                <Text size="xs" c="dimmed">
+                  Smoothly transition between songs by overlapping audio.
                 </Text>
               </div>
             </Stack>

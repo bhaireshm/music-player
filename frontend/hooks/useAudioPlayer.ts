@@ -16,6 +16,7 @@ interface AudioPlayerState {
   shuffleMode: boolean;
   repeatMode: 'off' | 'all' | 'one';
   playbackSpeed: number;
+  crossfadeDuration: number;
 }
 
 interface AudioPlayerActions {
@@ -38,6 +39,8 @@ interface AudioPlayerActions {
   decreaseSpeed: () => void;
   removeFromQueue: (index: number) => void;
   jumpToQueueIndex: (index: number) => void;
+  addToQueue: (song: Song) => void;
+  setCrossfadeDuration: (duration: number) => void;
 }
 
 export type UseAudioPlayerReturn = AudioPlayerState & AudioPlayerActions;
@@ -55,20 +58,30 @@ interface PersistedPlayerState {
   repeatMode: 'off' | 'all' | 'one';
   playbackSpeed: number;
   originalQueue: Song[];
+  crossfadeDuration: number;
 }
 
 const STORAGE_KEY = 'audioPlayerState';
+const VOLUME_STORAGE_KEY = 'musicPlayerVolume';
+const MUTE_STORAGE_KEY = 'musicPlayerMuted';
+const SHUFFLE_STORAGE_KEY = 'musicPlayerShuffle';
+const REPEAT_STORAGE_KEY = 'musicPlayerRepeat';
+const SPEED_STORAGE_KEY = 'musicPlayerSpeed';
+const CROSSFADE_STORAGE_KEY = 'musicPlayerCrossfade';
+const DEFAULT_VOLUME = 0.7; // 70%
+const DEFAULT_SPEED = 1; // Normal speed
+const DEFAULT_CROSSFADE = 0; // No crossfade
 
 /**
  * Load persisted player state from localStorage
  */
 function loadPersistedState(): PersistedPlayerState | null {
-  if (typeof window === 'undefined') return null;
-  
+  if (typeof globalThis.window === 'undefined') return null;
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
-    
+
     const parsed = JSON.parse(stored);
     return parsed;
   } catch (error) {
@@ -81,8 +94,8 @@ function loadPersistedState(): PersistedPlayerState | null {
  * Save player state to localStorage
  */
 function savePersistedState(state: PersistedPlayerState): void {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof globalThis.window === 'undefined') return;
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
@@ -90,13 +103,26 @@ function savePersistedState(state: PersistedPlayerState): void {
   }
 }
 
-const VOLUME_STORAGE_KEY = 'musicPlayerVolume';
-const MUTE_STORAGE_KEY = 'musicPlayerMuted';
-const SHUFFLE_STORAGE_KEY = 'musicPlayerShuffle';
-const REPEAT_STORAGE_KEY = 'musicPlayerRepeat';
-const SPEED_STORAGE_KEY = 'musicPlayerSpeed';
-const DEFAULT_VOLUME = 0.7; // 70%
-const DEFAULT_SPEED = 1.0; // Normal speed
+/**
+ * Load player settings from localStorage
+ */
+function loadStoredSettings() {
+  if (typeof globalThis.window === 'undefined') return null;
+
+  try {
+    const volume = localStorage.getItem(VOLUME_STORAGE_KEY);
+    const muted = localStorage.getItem(MUTE_STORAGE_KEY);
+    const shuffle = localStorage.getItem(SHUFFLE_STORAGE_KEY);
+    const repeat = localStorage.getItem(REPEAT_STORAGE_KEY);
+    const speed = localStorage.getItem(SPEED_STORAGE_KEY);
+    const crossfade = localStorage.getItem(CROSSFADE_STORAGE_KEY);
+
+    return { volume, muted, shuffle, repeat, speed, crossfade };
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+    return null;
+  }
+}
 
 /**
  * Fisher-Yates shuffle algorithm for unbiased randomization
@@ -110,11 +136,14 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+
 export function useAudioPlayer(): UseAudioPlayerReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const faderRef = useRef<HTMLAudioElement | null>(null); // Secondary player for crossfade
   const isInitializedRef = useRef<boolean>(false);
   const previousVolumeRef = useRef<number>(DEFAULT_VOLUME);
-  
+  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Initialize state with default values to prevent hydration mismatch
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -130,90 +159,164 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const [repeatMode, setRepeatModeState] = useState<'off' | 'all' | 'one'>('off');
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(DEFAULT_SPEED);
   const [originalQueue, setOriginalQueue] = useState<Song[]>([]); // Store unshuffled queue
+  const [crossfadeDuration, setCrossfadeDurationState] = useState<number>(DEFAULT_CROSSFADE);
+
+  // Helper to detach listeners
+  const detachListeners = useCallback((audio: HTMLAudioElement) => {
+    audio.removeEventListener('timeupdate', handleTimeUpdate);
+    audio.removeEventListener('durationchange', handleDurationChange);
+    audio.removeEventListener('play', handlePlay);
+    audio.removeEventListener('pause', handlePause);
+    audio.removeEventListener('loadstart', handleLoadStart);
+    audio.removeEventListener('canplay', handleCanPlay);
+    audio.removeEventListener('loadeddata', handleLoadedData);
+    audio.removeEventListener('error', handleError);
+    audio.removeEventListener('ended', handleEnded);
+  }, []);
+
+  // Helper to attach listeners to an audio element
+  const attachListeners = useCallback((audio: HTMLAudioElement) => {
+    // Remove existing listeners first to avoid duplicates if re-attaching
+    detachListeners(audio);
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('durationchange', handleDurationChange);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('loadstart', handleLoadStart);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('loadeddata', handleLoadedData);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('ended', handleEnded);
+  }, [detachListeners]); // Dependencies will be added via closure if needed, but functions are defined below
+
+  // Event Handlers (defined as refs or stable callbacks to avoid re-attaching)
+  const handleTimeUpdate = () => {
+    if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const handleDurationChange = () => {
+    if (audioRef.current) setDuration(audioRef.current.duration);
+  };
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+    setLoading(false);
+  };
+
+  const handlePause = () => {
+    // Only set isPlaying to false if the main player pauses AND we are not in the middle of a crossfade swap
+    // But for simplicity, we rely on the fact that we immediately play the next song
+    setIsPlaying(false);
+  };
+
+  const handleLoadStart = () => {
+    setLoading(true);
+    setError(null);
+  };
+
+  const handleCanPlay = () => {
+    setLoading(false);
+  };
+
+  const handleLoadedData = () => {
+    setLoading(false);
+  };
+
+  const handleError = () => {
+    setError('Failed to load audio');
+    setLoading(false);
+    setIsPlaying(false);
+  };
+
+  // Handle Ended needs access to latest state, so we might need a ref or effect
+  // But since we attach/detach, we can use a stable function that calls a ref
+  const handleEndedRef = useRef<() => void>(() => { });
+
+  const handleEnded = () => {
+    handleEndedRef.current();
+  };
 
   // Initialize audio element and restore persisted state after mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && !isInitializedRef.current) {
+    if (typeof globalThis.window !== 'undefined' && !isInitializedRef.current) {
       isInitializedRef.current = true;
       audioRef.current = new Audio();
-      
-      // Load volume and mute state from localStorage
-      try {
-        const storedVolume = localStorage.getItem(VOLUME_STORAGE_KEY);
-        const storedMuted = localStorage.getItem(MUTE_STORAGE_KEY);
-        const storedShuffle = localStorage.getItem(SHUFFLE_STORAGE_KEY);
-        const storedRepeat = localStorage.getItem(REPEAT_STORAGE_KEY);
-        const storedSpeed = localStorage.getItem(SPEED_STORAGE_KEY);
-        
-        if (storedVolume) {
-          const vol = parseFloat(storedVolume);
+      faderRef.current = new Audio(); // Initialize secondary player
+
+      // Load settings from localStorage
+      const settings = loadStoredSettings();
+
+      if (settings) {
+        if (settings.volume) {
+          const vol = Number.parseFloat(settings.volume);
           setVolumeState(vol);
           previousVolumeRef.current = vol;
           audioRef.current.volume = vol;
+          faderRef.current.volume = 0; // Fader starts silent
         } else {
           audioRef.current.volume = DEFAULT_VOLUME;
         }
-        
-        if (storedMuted === 'true') {
+
+        if (settings.muted === 'true') {
           setIsMuted(true);
           audioRef.current.muted = true;
+          faderRef.current.muted = true;
         }
-        
-        if (storedShuffle === 'true') {
+
+        if (settings.shuffle === 'true') {
           setShuffleMode(true);
         }
-        
-        if (storedRepeat && ['off', 'all', 'one'].includes(storedRepeat)) {
-          setRepeatModeState(storedRepeat as 'off' | 'all' | 'one');
+
+        if (settings.repeat && ['off', 'all', 'one'].includes(settings.repeat)) {
+          setRepeatModeState(settings.repeat as 'off' | 'all' | 'one');
         }
-        
-        if (storedSpeed) {
-          const speed = parseFloat(storedSpeed);
-          if (speed >= 0.25 && speed <= 2.0) {
+
+        if (settings.speed) {
+          const speed = Number.parseFloat(settings.speed);
+          if (speed >= 0.25 && speed <= 2) {
             setPlaybackSpeedState(speed);
             audioRef.current.playbackRate = speed;
+            faderRef.current.playbackRate = speed;
           }
         }
-      } catch (error) {
-        console.error('Failed to load volume settings:', error);
+
+        if (settings.crossfade) {
+          setCrossfadeDurationState(Number.parseFloat(settings.crossfade));
+        }
+      } else {
+        audioRef.current.volume = DEFAULT_VOLUME;
       }
-      
-      // Load persisted state after mount to prevent hydration mismatch
+
+      // Load persisted state
       const persistedState = loadPersistedState();
-      
+
       if (persistedState) {
-        // Restore state from localStorage
         setCurrentSong(persistedState.currentSong);
         setQueue(persistedState.queue);
         setCurrentIndex(persistedState.currentIndex);
         setOriginalQueue(persistedState.originalQueue || persistedState.queue);
-        
-        if (persistedState.shuffleMode !== undefined) {
-          setShuffleMode(persistedState.shuffleMode);
+        if (persistedState.crossfadeDuration !== undefined) {
+          setCrossfadeDurationState(persistedState.crossfadeDuration);
         }
-        if (persistedState.repeatMode) {
-          setRepeatModeState(persistedState.repeatMode);
-        }
+
+        if (persistedState.shuffleMode !== undefined) setShuffleMode(persistedState.shuffleMode);
+        if (persistedState.repeatMode) setRepeatModeState(persistedState.repeatMode);
         if (persistedState.playbackSpeed) {
           setPlaybackSpeedState(persistedState.playbackSpeed);
           audioRef.current.playbackRate = persistedState.playbackSpeed;
         }
-        
-        // Restore song and position if available
+
         if (persistedState.currentSong) {
-          // Load the song asynchronously
           (async () => {
             try {
               const token = await getIdToken();
               const streamUrl = getSongStreamUrl(persistedState.currentSong!.id);
-              const authenticatedUrl = token 
-                ? `${streamUrl}?token=${token}` 
-                : streamUrl;
-              
+              const authenticatedUrl = token ? `${streamUrl}?token=${token}` : streamUrl;
+
               audioRef.current!.src = authenticatedUrl;
               audioRef.current!.load();
-              
-              // Wait for metadata to load before seeking
+
               audioRef.current!.addEventListener('loadedmetadata', () => {
                 if (persistedState.currentTime > 0) {
                   audioRef.current!.currentTime = persistedState.currentTime;
@@ -225,146 +328,173 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
             }
           })();
         }
-      } else {
-        audioRef.current.volume = 1;
       }
 
-      // Set up event listeners
-      const audio = audioRef.current;
+      // Attach listeners to main player
+      attachListeners(audioRef.current);
 
-      const handleTimeUpdate = () => {
-        setCurrentTime(audio.currentTime);
-      };
-
-      const handleDurationChange = () => {
-        setDuration(audio.duration);
-      };
-
-      const handlePlay = () => {
-        setIsPlaying(true);
-        setLoading(false);
-      };
-
-      const handlePause = () => {
-        setIsPlaying(false);
-      };
-
-      const handleLoadStart = () => {
-        setLoading(true);
-        setError(null);
-      };
-
-      const handleCanPlay = () => {
-        setLoading(false);
-      };
-
-      const handleLoadedData = () => {
-        setLoading(false);
-      };
-
-      const handleError = () => {
-        setError('Failed to load audio');
-        setLoading(false);
-        setIsPlaying(false);
-      };
-
-      audio.addEventListener('timeupdate', handleTimeUpdate);
-      audio.addEventListener('durationchange', handleDurationChange);
-      audio.addEventListener('play', handlePlay);
-      audio.addEventListener('pause', handlePause);
-      audio.addEventListener('loadstart', handleLoadStart);
-      audio.addEventListener('canplay', handleCanPlay);
-      audio.addEventListener('loadeddata', handleLoadedData);
-      audio.addEventListener('error', handleError);
-
-      // Cleanup
       return () => {
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
-        audio.removeEventListener('durationchange', handleDurationChange);
-        audio.removeEventListener('play', handlePlay);
-        audio.removeEventListener('pause', handlePause);
-        audio.removeEventListener('loadstart', handleLoadStart);
-        audio.removeEventListener('canplay', handleCanPlay);
-        audio.removeEventListener('loadeddata', handleLoadedData);
-        audio.removeEventListener('error', handleError);
-        audio.pause();
-        audio.src = '';
+        if (audioRef.current) {
+          detachListeners(audioRef.current);
+          audioRef.current.pause();
+          audioRef.current.src = '';
+        }
+        if (faderRef.current) {
+          faderRef.current.pause();
+          faderRef.current.src = '';
+        }
+        if (fadeIntervalRef.current) {
+          clearInterval(fadeIntervalRef.current);
+        }
       };
     }
-  }, []);
+  }, [attachListeners, detachListeners]);
+
+
+
 
   /**
    * Load a song into the audio player
-   * 
-   * @param {Song} song - The song to load
    */
   const loadSong = useCallback(async (song: Song) => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !faderRef.current) return;
+
+    // Check if we should crossfade
+    const shouldCrossfade = crossfadeDuration > 0 && isPlaying && audioRef.current.src && !audioRef.current.paused;
 
     try {
       setLoading(true);
       setError(null);
       setCurrentSong(song);
 
-      // Get the streaming URL with authentication token
       const token = await getIdToken();
       const streamUrl = getSongStreamUrl(song.id);
-      
-      // Add token as query parameter for authentication
-      const authenticatedUrl = token 
-        ? `${streamUrl}?token=${token}` 
-        : streamUrl;
+      const authenticatedUrl = token ? `${streamUrl}?token=${token}` : streamUrl;
 
-      // Load the new song
-      audioRef.current.src = authenticatedUrl;
-      
-      // Add error handler for loading issues
-      const handleLoadError = (e: Event) => {
-        console.error('Audio load error:', e);
-        console.error('Attempted URL:', authenticatedUrl);
-        console.error('Backend URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
-        setError('Cannot load audio. Make sure the backend server is running on port 3001.');
-        setIsPlaying(false);
-        setLoading(false);
-      };
-      
-      audioRef.current.addEventListener('error', handleLoadError, { once: true });
-      audioRef.current.load();
-      
-      // Reset playback state
-      setCurrentTime(0);
-      
-      // Auto-play the song once it's ready
-      const handleCanPlayAutoPlay = () => {
-        setLoading(false);
-        audioRef.current?.play().catch((err) => {
-          console.error('Auto-play error:', err);
-          setError('Failed to play audio');
+      if (shouldCrossfade) {
+        // CROSSFADE LOGIC
+
+        // 1. Swap refs: fader becomes the old main (playing), main becomes the new one (to be loaded)
+        const oldMain = audioRef.current;
+        const newMain = faderRef.current;
+
+        // Detach listeners from old main, attach to new main
+        detachListeners(oldMain);
+        attachListeners(newMain);
+
+        // Update refs
+        audioRef.current = newMain;
+        faderRef.current = oldMain;
+
+        // 2. Start fading out the old song (now in faderRef)
+        const fadeOutDuration = crossfadeDuration * 1000;
+        const steps = 20;
+        const stepTime = fadeOutDuration / steps;
+        const volStep = volume / steps;
+
+        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+
+        let currentStep = 0;
+        fadeIntervalRef.current = setInterval(() => {
+          currentStep++;
+          if (faderRef.current) {
+            const newVol = Math.max(0, volume - (volStep * currentStep));
+            faderRef.current.volume = newVol;
+          }
+
+          if (currentStep >= steps) {
+            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+            if (faderRef.current) {
+              faderRef.current.pause();
+              faderRef.current.currentTime = 0;
+              faderRef.current.volume = volume; // Reset volume for next time
+            }
+          }
+        }, stepTime);
+
+        // 3. Load and play new song in new main
+
+        // Define auto-play handler
+        const handleCanPlayAutoPlay = () => {
+          setLoading(false);
+          newMain.play().then(() => {
+            // Fade in
+            let inStep = 0;
+            const fadeInInterval = setInterval(() => {
+              inStep++;
+              if (newMain) {
+                const newVol = Math.min(volume, (volStep * inStep));
+                newMain.volume = newVol;
+              }
+
+              if (inStep >= steps) {
+                clearInterval(fadeInInterval);
+                if (newMain) newMain.volume = volume; // Ensure final volume is correct
+              }
+            }, stepTime);
+          }).catch((err) => {
+            console.error('Auto-play error:', err);
+            setError('Failed to play audio');
+            setIsPlaying(false);
+            setLoading(false);
+          });
+        };
+
+        // Attach listener BEFORE loading
+        newMain.addEventListener('canplay', handleCanPlayAutoPlay, { once: true });
+
+        // Load source
+        newMain.src = authenticatedUrl;
+        newMain.volume = 0; // Start silent
+        newMain.load();
+
+        // Reset time
+        setCurrentTime(0);
+
+      } else {
+        // STANDARD LOAD LOGIC (No Crossfade)
+
+        // Define handlers
+        const handleLoadError = () => {
+          console.error('Audio load error');
+          setError('Cannot load audio.');
           setIsPlaying(false);
           setLoading(false);
-        });
-      };
-      
-      audioRef.current.addEventListener('canplay', handleCanPlayAutoPlay, { once: true });
+        };
+
+        const handleCanPlayAutoPlay = () => {
+          setLoading(false);
+          audioRef.current?.play().catch((err) => {
+            console.error('Auto-play error:', err);
+            setError('Failed to play audio');
+            setIsPlaying(false);
+            setLoading(false);
+          });
+        };
+
+        // Attach listeners BEFORE loading
+        audioRef.current.addEventListener('error', handleLoadError, { once: true });
+        audioRef.current.addEventListener('canplay', handleCanPlayAutoPlay, { once: true });
+
+        // Load source
+        audioRef.current.src = authenticatedUrl;
+        audioRef.current.load();
+        setCurrentTime(0);
+      }
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load song';
       setError(errorMessage);
       setLoading(false);
     }
-  }, []);
+  }, [crossfadeDuration, isPlaying, volume, attachListeners, detachListeners]);
 
-  /**
-   * Play the current song
-   */
   const play = useCallback(() => {
     if (!audioRef.current || !currentSong) return;
-
-    // If the audio source is not set, load the song first
     if (!audioRef.current.src || audioRef.current.src === '') {
       loadSong(currentSong);
       return;
     }
-
     audioRef.current.play().catch((err) => {
       console.error('Playback error:', err);
       setError('Failed to play audio');
@@ -372,221 +502,146 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     });
   }, [currentSong, loadSong]);
 
-  /**
-   * Pause the current song
-   */
   const pause = useCallback(() => {
     if (!audioRef.current) return;
     audioRef.current.pause();
+    // Also pause fader if it's playing
+    if (faderRef.current) faderRef.current.pause();
   }, []);
 
-  /**
-   * Seek to a specific time in the song
-   * 
-   * @param {number} time - Time in seconds to seek to
-   */
   const seek = useCallback((time: number) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = time;
     setCurrentTime(time);
   }, []);
 
-  /**
-   * Set the volume level
-   * 
-   * @param {number} newVolume - Volume level between 0 and 1
-   */
   const setVolume = useCallback((newVolume: number) => {
     if (!audioRef.current) return;
-    
-    // Clamp volume between 0 and 1
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
+
+    // Update both players (unless fading)
     audioRef.current.volume = clampedVolume;
+    // We don't update fader volume here because it might be fading out
+
     setVolumeState(clampedVolume);
     previousVolumeRef.current = clampedVolume;
-    
-    // Persist to localStorage
+
     try {
       localStorage.setItem(VOLUME_STORAGE_KEY, clampedVolume.toString());
     } catch (error) {
       console.error('Failed to save volume:', error);
     }
-    
-    // Unmute if volume is increased from 0
+
     if (clampedVolume > 0 && isMuted) {
       setIsMuted(false);
-      if (audioRef.current) {
-        audioRef.current.muted = false;
-      }
+      audioRef.current.muted = false;
+      if (faderRef.current) faderRef.current.muted = false;
       try {
         localStorage.setItem(MUTE_STORAGE_KEY, 'false');
-      } catch (error) {
-        console.error('Failed to save mute state:', error);
-      }
+      } catch (error) { console.error(error); }
     }
   }, [isMuted]);
 
-  /**
-   * Toggle mute state
-   */
   const toggleMute = useCallback(() => {
     if (!audioRef.current) return;
-    
     const newMutedState = !isMuted;
     setIsMuted(newMutedState);
     audioRef.current.muted = newMutedState;
-    
+    if (faderRef.current) faderRef.current.muted = newMutedState;
+
     if (newMutedState) {
-      // Muting: save current volume
       previousVolumeRef.current = volume;
-    } else {
-      // Unmuting: restore previous volume
-      if (previousVolumeRef.current > 0) {
-        setVolumeState(previousVolumeRef.current);
-        audioRef.current.volume = previousVolumeRef.current;
-      }
+    } else if (previousVolumeRef.current > 0) {
+      setVolumeState(previousVolumeRef.current);
+      audioRef.current.volume = previousVolumeRef.current;
     }
-    
-    // Persist mute state
+
     try {
       localStorage.setItem(MUTE_STORAGE_KEY, newMutedState.toString());
-    } catch (error) {
-      console.error('Failed to save mute state:', error);
-    }
+    } catch (error) { console.error(error); }
   }, [isMuted, volume]);
 
-  /**
-   * Increase volume by specified amount
-   */
   const increaseVolume = useCallback((amount: number = 0.05) => {
     const newVolume = Math.min(1, volume + amount);
     setVolume(newVolume);
   }, [volume, setVolume]);
 
-  /**
-   * Decrease volume by specified amount
-   */
   const decreaseVolume = useCallback((amount: number = 0.05) => {
     const newVolume = Math.max(0, volume - amount);
     setVolume(newVolume);
   }, [volume, setVolume]);
 
-  /**
-   * Set the playback queue
-   * 
-   * @param {Song[]} songs - Array of songs to set as the queue
-   * @param {number} startIndex - Index of the song to start playing (default: 0)
-   */
   const setQueueFunc = useCallback((songs: Song[], startIndex: number = 0) => {
-    setOriginalQueue(songs); // Always store original order
-    
+    setOriginalQueue(songs);
     if (shuffleMode) {
-      // If shuffle is active, shuffle the new queue
       const shuffled = shuffleArray(songs);
       setQueue(shuffled);
-      // Find the start song in shuffled queue
       const startSong = songs[startIndex];
       const newIndex = shuffled.findIndex(song => song.id === startSong?.id);
-      setCurrentIndex(newIndex >= 0 ? newIndex : 0);
-      if (shuffled[newIndex >= 0 ? newIndex : 0]) {
-        loadSong(shuffled[newIndex >= 0 ? newIndex : 0]);
+      const safeIndex = Math.max(0, newIndex);
+      setCurrentIndex(safeIndex);
+      if (shuffled[safeIndex]) {
+        loadSong(shuffled[safeIndex]);
       }
     } else {
       setQueue(songs);
       setCurrentIndex(startIndex);
-      
-      // Load the song at the start index if valid
       if (startIndex >= 0 && startIndex < songs.length) {
         loadSong(songs[startIndex]);
       }
     }
   }, [loadSong, shuffleMode]);
 
-  /**
-   * Advance to the next song in the queue
-   */
   const next = useCallback(() => {
     if (queue.length === 0) return;
-    
     const nextIndex = currentIndex + 1;
-    
-    // Check if there's a next song
     if (nextIndex < queue.length) {
       setCurrentIndex(nextIndex);
       loadSong(queue[nextIndex]);
     }
   }, [queue, currentIndex, loadSong]);
 
-  /**
-   * Go to the previous song in the queue
-   */
   const previous = useCallback(() => {
     if (queue.length === 0) return;
-    
     const prevIndex = currentIndex - 1;
-    
-    // Check if there's a previous song
     if (prevIndex >= 0) {
       setCurrentIndex(prevIndex);
       loadSong(queue[prevIndex]);
     }
   }, [queue, currentIndex, loadSong]);
 
-  /**
-   * Toggle shuffle mode
-   */
   const toggleShuffle = useCallback(() => {
     const newShuffleMode = !shuffleMode;
     setShuffleMode(newShuffleMode);
-    
+
     if (newShuffleMode) {
-      // Activating shuffle: save original queue and shuffle remaining songs
       setOriginalQueue(queue);
-      
       if (queue.length > 0 && currentIndex >= 0) {
-        // Keep current song in place, shuffle the rest
         const beforeCurrent = queue.slice(0, currentIndex);
         const afterCurrent = queue.slice(currentIndex + 1);
         const shuffledAfter = shuffleArray(afterCurrent);
         const newQueue = [...beforeCurrent, queue[currentIndex], ...shuffledAfter];
         setQueue(newQueue);
       }
-    } else {
-      // Deactivating shuffle: restore original queue order
-      if (originalQueue.length > 0) {
-        // Find current song in original queue
-        const currentSongId = currentSong?.id;
-        const newIndex = originalQueue.findIndex(song => song.id === currentSongId);
-        setQueue(originalQueue);
-        setCurrentIndex(newIndex >= 0 ? newIndex : currentIndex);
-      }
+    } else if (originalQueue.length > 0) {
+      const currentSongId = currentSong?.id;
+      const newIndex = originalQueue.findIndex(song => song.id === currentSongId);
+      setQueue(originalQueue);
+      setCurrentIndex(newIndex >= 0 ? newIndex : currentIndex);
     }
-    
-    // Persist shuffle state
+
     try {
       localStorage.setItem(SHUFFLE_STORAGE_KEY, newShuffleMode.toString());
-    } catch (error) {
-      console.error('Failed to save shuffle state:', error);
-    }
+    } catch (error) { console.error(error); }
   }, [shuffleMode, queue, currentIndex, currentSong, originalQueue]);
 
-  /**
-   * Set repeat mode
-   */
   const setRepeatMode = useCallback((mode: 'off' | 'all' | 'one') => {
     setRepeatModeState(mode);
-    
-    // Persist repeat mode
     try {
       localStorage.setItem(REPEAT_STORAGE_KEY, mode);
-    } catch (error) {
-      console.error('Failed to save repeat mode:', error);
-    }
+    } catch (error) { console.error(error); }
   }, []);
 
-  /**
-   * Cycle through repeat modes: off → all → one → off
-   */
   const cycleRepeatMode = useCallback(() => {
     const modes: Array<'off' | 'all' | 'one'> = ['off', 'all', 'one'];
     const currentModeIndex = modes.indexOf(repeatMode);
@@ -594,56 +649,37 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     setRepeatMode(nextMode);
   }, [repeatMode, setRepeatMode]);
 
-  /**
-   * Set playback speed
-   */
   const setPlaybackSpeed = useCallback((speed: number) => {
     if (!audioRef.current) return;
-    
-    // Clamp speed between 0.25x and 2.0x
-    const clampedSpeed = Math.max(0.25, Math.min(2.0, speed));
+    const clampedSpeed = Math.max(0.25, Math.min(2, speed));
     audioRef.current.playbackRate = clampedSpeed;
+    if (faderRef.current) faderRef.current.playbackRate = clampedSpeed;
     setPlaybackSpeedState(clampedSpeed);
-    
-    // Persist playback speed
+
     try {
       localStorage.setItem(SPEED_STORAGE_KEY, clampedSpeed.toString());
-    } catch (error) {
-      console.error('Failed to save playback speed:', error);
-    }
+    } catch (error) { console.error(error); }
   }, []);
 
-  /**
-   * Increase playback speed by 0.25x
-   */
   const increaseSpeed = useCallback(() => {
-    const newSpeed = Math.min(2.0, playbackSpeed + 0.25);
+    const newSpeed = Math.min(2, playbackSpeed + 0.25);
     setPlaybackSpeed(newSpeed);
   }, [playbackSpeed, setPlaybackSpeed]);
 
-  /**
-   * Decrease playback speed by 0.25x
-   */
   const decreaseSpeed = useCallback(() => {
     const newSpeed = Math.max(0.25, playbackSpeed - 0.25);
     setPlaybackSpeed(newSpeed);
   }, [playbackSpeed, setPlaybackSpeed]);
 
-  /**
-   * Remove a song from the queue
-   */
   const removeFromQueue = useCallback((index: number) => {
     if (index < 0 || index >= queue.length) return;
-    
     const newQueue = [...queue];
     newQueue.splice(index, 1);
     setQueue(newQueue);
-    
-    // Adjust current index if necessary
+
     if (index < currentIndex) {
       setCurrentIndex(currentIndex - 1);
     } else if (index === currentIndex && newQueue.length > 0) {
-      // If removing current song, load the next one (or previous if at end)
       const newIndex = Math.min(currentIndex, newQueue.length - 1);
       setCurrentIndex(newIndex);
       if (newQueue[newIndex]) {
@@ -652,51 +688,28 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     }
   }, [queue, currentIndex, loadSong]);
 
-  /**
-   * Jump to a specific song in the queue
-   */
+  const addToQueue = useCallback((song: Song) => {
+    setQueue(prev => [...prev, song]);
+    setOriginalQueue(prev => [...prev, song]);
+  }, []);
+
   const jumpToQueueIndex = useCallback((index: number) => {
     if (index < 0 || index >= queue.length) return;
-    
     setCurrentIndex(index);
     loadSong(queue[index]);
   }, [queue, loadSong]);
 
-  // Auto-play next song when current song ends
+  const setCrossfadeDuration = useCallback((duration: number) => {
+    setCrossfadeDurationState(duration);
+    try {
+      localStorage.setItem(CROSSFADE_STORAGE_KEY, duration.toString());
+    } catch (error) { console.error(error); }
+  }, []);
+
+  // Persist state changes
   useEffect(() => {
-    if (!audioRef.current) return;
+    if (!isInitializedRef.current) return;
 
-    const handleEnded = () => {
-      if (repeatMode === 'one') {
-        // Repeat current song
-        audioRef.current!.currentTime = 0;
-        audioRef.current!.play();
-      } else if (repeatMode === 'all' && currentIndex === queue.length - 1) {
-        // Repeat all: go back to start
-        setCurrentIndex(0);
-        loadSong(queue[0]);
-      } else if (currentIndex >= 0 && currentIndex < queue.length - 1) {
-        // Normal: play next song
-        next();
-      } else if (repeatMode === 'all' && queue.length > 0) {
-        // At end with repeat all: restart
-        setCurrentIndex(0);
-        loadSong(queue[0]);
-      }
-    };
-
-    const audio = audioRef.current;
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [currentIndex, queue, repeatMode, next, loadSong]);
-
-  // Persist state changes to localStorage
-  useEffect(() => {
-    if (!isInitializedRef.current) return; // Don't save until initial restore is complete
-    
     savePersistedState({
       currentSong,
       currentTime,
@@ -707,8 +720,9 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       repeatMode,
       playbackSpeed,
       originalQueue,
+      crossfadeDuration,
     });
-  }, [currentSong, currentTime, volume, queue, currentIndex, shuffleMode, repeatMode, playbackSpeed, originalQueue]);
+  }, [currentSong, currentTime, volume, queue, currentIndex, shuffleMode, repeatMode, playbackSpeed, originalQueue, crossfadeDuration]);
 
   return {
     currentSong,
@@ -724,6 +738,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     shuffleMode,
     repeatMode,
     playbackSpeed,
+    crossfadeDuration,
     play,
     pause,
     seek,
@@ -743,5 +758,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     decreaseSpeed,
     removeFromQueue,
     jumpToQueueIndex,
+    addToQueue,
+    setCrossfadeDuration,
   };
 }

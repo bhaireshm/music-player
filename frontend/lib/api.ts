@@ -30,6 +30,7 @@ export interface Song {
   uploadedBy?: string;
   year?: string;
   genre?: string;
+  lyrics?: string;
 }
 
 /**
@@ -153,7 +154,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
     // Try to parse error response
     try {
       const errorData: ErrorResponse = await response.json();
-      
+
       // Log error details for debugging
       console.error('API Error:', {
         endpoint: response.url,
@@ -163,7 +164,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
         details: errorData.error.details,
         timestamp: new Date().toISOString(),
       });
-      
+
       throw new ApiError(
         errorData.error.code,
         errorData.error.message,
@@ -174,7 +175,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
       if (error instanceof ApiError) {
         throw error;
       }
-      
+
       // Log parsing error
       console.error('API Error (failed to parse):', {
         endpoint: response.url,
@@ -182,7 +183,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
         timestamp: new Date().toISOString(),
         error,
       });
-      
+
       throw new ApiError(
         'UNKNOWN_ERROR',
         `Request failed with status ${response.status}`
@@ -294,6 +295,30 @@ export async function getSong(songId: string): Promise<Song> {
   const response = await makeAuthenticatedRequest(`/songs/${songId}/metadata`);
   const data = await parseResponse<{ song: Song }>(response);
   return data.song;
+}
+
+/**
+ * Update song metadata
+ */
+export async function updateSong(
+  songId: string,
+  updates: {
+    title?: string;
+    artist?: string;
+    album?: string;
+    year?: string;
+    genre?: string;
+    lyrics?: string;
+  }
+): Promise<{ song: Song }> {
+  const response = await makeAuthenticatedRequest(`/songs/${songId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  });
+  return parseResponse<{ song: Song }>(response);
 }
 
 /**
@@ -575,7 +600,7 @@ export async function getFavorites(limit: number = 100, offset: number = 0): Pro
     limit: limit.toString(),
     offset: offset.toString(),
   });
-  
+
   const response = await makeAuthenticatedRequest(`/favorites?${params.toString()}`);
   return parseResponse(response);
 }
@@ -680,7 +705,7 @@ export async function getPublicPlaylists(
     limit: limit.toString(),
     offset: offset.toString(),
   });
-  
+
   if (search) {
     params.append('search', search);
   }

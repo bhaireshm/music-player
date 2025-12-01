@@ -16,7 +16,7 @@ export function OfflineIndicator() {
 
   useEffect(() => {
     // Set initial online status
-    setIsOnline(navigator.onLine);
+    setTimeout(() => setIsOnline(navigator.onLine), 0);
 
     // Listen for online/offline events
     const handleOnline = () => {

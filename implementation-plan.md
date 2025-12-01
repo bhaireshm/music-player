@@ -1,199 +1,61 @@
+# Third-Party Music Integration (JioSaavn)
 
-# Online Music Player – Implementation Plan & System Design
+## Goal
+Enable users to search and play "free and third-party music" (specifically Indian + English songs) alongside their uploaded library. We will use the **JioSaavn** (unofficial) API as the source, as it perfectly matches the "Indian + English" requirement.
 
-This document outlines the full technical implementation and architecture for a Spotify-like music streaming web app using a JavaScript-based stack.
+## User Review Required
+> [!IMPORTANT]
+> This implementation relies on an **unofficial** JioSaavn API. If the external API changes or goes down, this feature may break.
+> We are not saving external songs to the database initially; they will be "stream-only" from search results.
 
----
-
-## 🌐 Tech Stack
-
-### Frontend
-
-- **Framework**: Next.js (React + SSR)
-- **Styling**: Tailwind CSS
-- **Authentication**: Firebase Authentication
-- **Audio Playback**: HTML5 `<audio>` tag
+## Proposed Changes
 
 ### Backend
 
-- **Server**: Node.js with Express.js
-- **Database**: MongoDB Atlas (via Mongoose)
-- **Authentication Verification**: Firebase Admin SDK
-- **Audio Fingerprinting**: Chromaprint + fpcalc
-- **Cloud Storage**: Cloudflare R2 (S3-compatible)
-- **File Upload**: multer middleware
+#### [NEW] [saavnService.ts](file:///d:/My_Codes/music-player/backend/src/services/saavnService.ts)
+- Implement `SaavnService` to fetch data from JioSaavn.
+- Methods: `searchSongs(query)`, `getStreamUrl(id)`.
+- Will use a public unofficial API endpoint (e.g., `https://saavn.dev` or similar, or implement the logic directly if simple). *Decision: Use a direct fetch to a known public API wrapper or implement the scraping logic if robust.*
+- **Note**: For stability, we will use a known public API wrapper for Saavn.
 
-### Dev Tools
+#### [MODIFY] [searchService.ts](file:///d:/My_Codes/music-player/backend/src/services/searchService.ts)
+- Update `search` method to call `SaavnService.searchSongs` when filter is `all` or `songs`.
+- Merge external results with local DB results.
+- Mark external results with `isExternal: true`.
 
-- **TypeScript**
-- **ESLint & Prettier**
-- **Nodemon** for development
-
----
-
-## 🔐 Authentication Flow
-
-- Users register/login using Firebase Auth.
-- On successful login, frontend receives a Firebase ID Token.
-- Token is sent with each backend request in headers.
-- Backend verifies token using Firebase Admin SDK.
-
----
-
-## 🧠 Core Features & Endpoints
-
-### 1. User Auth (Firebase)
-
-| Method | Endpoint         | Description              |
-|--------|------------------|--------------------------|
-| POST   | /auth/signup     | Register a new user      |
-| POST   | /auth/verify     | Verify ID token from client |
-
-### 2. Songs
-
-| Method | Endpoint         | Description              |
-|--------|------------------|--------------------------|
-| POST   | /songs/upload    | Upload song (local file) |
-| GET    | /songs/:id       | Stream song by ID        |
-
-- On upload:
-  - Generate audio fingerprint.
-  - Check for duplicates in DB.
-  - Upload to Cloudflare R2 if unique.
-  - Store metadata + fingerprint.
-
-### 3. Playlists
-
-| Method | Endpoint             | Description                    |
-|--------|----------------------|--------------------------------|
-| GET    | /playlists           | Fetch user playlists           |
-| POST   | /playlists           | Create new playlist            |
-| PUT    | /playlists/:id       | Update playlist songs          |
-| DELETE | /playlists/:id       | Delete playlist                |
-
----
-
-## 🧰 File Upload & Storage Flow
-
-1. Client uploads audio via form (multipart).
-2. Server uses `multer` to read file buffer.
-3. Run `fpcalc` on buffer to get fingerprint.
-4. Check MongoDB for duplicate fingerprint.
-5. If unique:
-    - Upload to Cloudflare R2 using AWS SDK.
-    - Save song metadata + fingerprint to MongoDB.
-
----
-
-## 🧪 Audio Streaming Flow
-
-- Audio files stored in R2 are streamed via:
-  - `GET /songs/:id`
-  - Server fetches object from R2 using AWS SDK.
-  - Sends `206 Partial Content` for HTML5 streaming support.
-- Client uses `<audio src="/songs/:id" controls />`
-
----
-
-## 🗃️ Data Models
-
-### User
-
-```ts
-{
-  uid: string,
-  email: string,
-  createdAt: Date
-}
-```
-
-### Song
-
-```ts
-{
-  _id: ObjectId,
-  title: string,
-  artist: string,
-  fileKey: string,
-  mimeType: string,
-  uploadedBy: ObjectId,
-  fingerprint: string
-}
-```
-
-### Playlist
-
-```ts
-{
-  _id: ObjectId,
-  name: string,
-  userId: ObjectId,
-  songIds: ObjectId[],
-  createdAt: Date
-}
-```
-
----
-
-## 🚀 Deployment Plan
-
-### Backend
-
-- Host on **Render** (Free Plan)
-- Environment variables for DB, R2, Firebase
-- Auto-deploy via GitHub
+#### [MODIFY] [songController.ts](file:///d:/My_Codes/music-player/backend/src/controllers/songController.ts)
+- Update `streamSong` or add a new endpoint to handle external streams if we need to proxy them (to avoid CORS or hide the source).
+- *Alternative*: If the frontend can play the URL directly, we might not need this. However, Saavn streams often expire or need specific headers. A proxy is safer.
 
 ### Frontend
 
-- Host on **Vercel**
-- Connect to backend via environment URL
-- Auto-deploy from GitHub repo
+#### [MODIFY] [api.ts](file:///d:/My_Codes/music-player/frontend/lib/api.ts)
+- Update `Song` interface:
+  ```typescript
+  export interface Song {
+    // ... existing fields
+    isExternal?: boolean;
+    streamUrl?: string; // Direct URL for external songs
+    externalId?: string;
+    image?: string; // Saavn returns 'image' instead of 'albumArt' sometimes, need to map
+  }
+  ```
 
----
+#### [MODIFY] [useAudioPlayer.ts](file:///d:/My_Codes/music-player/frontend/hooks/useAudioPlayer.ts)
+- Update `loadSong` to check for `song.streamUrl`.
+- If `song.isExternal` is true, use the `streamUrl` directly (or call a backend endpoint to get it if it's dynamic).
 
-## 🔒 Optional: Admin Role
+#### [MODIFY] [SearchOverlay.tsx](file:///d:/My_Codes/music-player/frontend/components/SearchOverlay.tsx)
+- Update to render external results.
+- Ensure clicking an external result plays it immediately.
 
-- Add `role` field to user
-- Use middleware to restrict access to admin-only routes (e.g. song deletion)
+## Verification Plan
 
----
+### Automated Tests
+- Unit tests for `SaavnService` (mocking the external API).
 
-## ⚙️ Scalability Notes
-
-- Stateless API design (JWT-based)
-- CDN-backed audio via R2
-- MongoDB Atlas scales vertically
-- Frontend served globally via Vercel CDN
-
----
-
-## 📁 Folder Structure
-
-```
-spotify-clone-backend/
-├── config/
-│   ├── db.js
-│   └── firebase.js
-├── src/
-│   ├── index.js
-│   ├── routes/
-│   ├── controllers/
-│   └── models/
-├── .env.example
-├── package.json
-└── README.md
-```
-
----
-
-## ✅ MVP Milestones
-
-- [ ] Project setup with Express + TypeScript
-- [ ] Firebase Auth integration
-- [ ] File upload & fingerprinting
-- [ ] Song storage on Cloudflare R2
-- [ ] Basic playlist management
-- [ ] Frontend audio player UI
-- [ ] Full integration & deployment
-
----
+### Manual Verification
+1.  **Search**: Search for a popular Indian song (e.g., "Kesariya").
+2.  **Verify Results**: Ensure results appear in the search dropdown mixed with local songs.
+3.  **Play**: Click a result and verify it plays.
+4.  **Controls**: Verify pause/play/seek work for external tracks.

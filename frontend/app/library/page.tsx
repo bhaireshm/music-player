@@ -35,6 +35,7 @@ import {
   IconAlertCircle,
   IconX,
   IconDownload,
+  IconList,
 } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -96,7 +97,7 @@ function LibraryPageContent() {
   const [displayCount, setDisplayCount] = useState(20);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [offlineSongs, setOfflineSongs] = useState<Set<string>>(new Set());
-  const { setQueue, isPlaying, currentSong: audioCurrentSong } = useAudioPlayerContext();
+  const { setQueue, isPlaying, currentSong: audioCurrentSong, addToQueue } = useAudioPlayerContext();
   const router = useRouter();
   const searchParams = useSearchParams();
   const theme = useMantineTheme();
@@ -127,7 +128,7 @@ function LibraryPageContent() {
     try {
       const fetchedSongs = await getSongs();
       setSongs(fetchedSongs);
-      
+
       // Check offline status for all songs
       const offlineSet = new Set<string>();
       for (const song of fetchedSongs) {
@@ -168,7 +169,7 @@ function LibraryPageContent() {
 
   const loadMore = () => {
     if (isLoadingMore || !hasMore) return;
-    
+
     setIsLoadingMore(true);
     // Simulate loading delay for smooth UX
     setTimeout(() => {
@@ -205,9 +206,9 @@ function LibraryPageContent() {
    */
   const handleDownload = async (song: Song, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     const isOffline = offlineSongs.has(song.id);
-    
+
     if (isOffline) {
       // Remove from offline storage
       try {
@@ -235,7 +236,7 @@ function LibraryPageContent() {
     // Download song for offline
     try {
       const songUrl = getSongStreamUrl(song.id);
-      
+
       await downloadManager.queueDownload(
         song.id,
         song.title,
@@ -284,7 +285,7 @@ function LibraryPageContent() {
         >
           <Group justify="space-between" align="center">
             <Stack gap="xs">
-              <Title 
+              <Title
                 order={1}
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
@@ -524,6 +525,20 @@ function LibraryPageContent() {
                             </Menu.Target>
                             <Menu.Dropdown p={4}>
                               <Menu.Item
+                                leftSection={<IconList size={14} />}
+                                onClick={() => {
+                                  addToQueue(song);
+                                  notifications.show({
+                                    title: 'Added to Queue',
+                                    message: `${song.title} added to queue`,
+                                    color: 'green',
+                                  });
+                                }}
+                                style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
+                              >
+                                Add to Queue
+                              </Menu.Item>
+                              <Menu.Item
                                 leftSection={<IconPlayerPlay size={14} />}
                                 onClick={() => handlePlaySong(song, index)}
                                 style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
@@ -537,7 +552,7 @@ function LibraryPageContent() {
                                 withArrow
                               >
                                 <Menu.Target>
-                                  <Menu.Item 
+                                  <Menu.Item
                                     leftSection={<IconPlaylistAdd size={14} />}
                                     style={{ fontSize: '13px', padding: `${theme.spacing.xs} ${theme.spacing.sm}` }}
                                   >
@@ -586,8 +601,8 @@ function LibraryPageContent() {
                         ? `linear-gradient(135deg, ${theme.colors.accent1[1]} 0%, ${theme.colors.secondary[1]} 100%)`
                         : theme.colors.primary[9],
                     borderRadius: theme.radius.md,
-                    border: audioCurrentSong?.id === song.id 
-                      ? `1px solid ${theme.colors.accent1[4]}` 
+                    border: audioCurrentSong?.id === song.id
+                      ? `1px solid ${theme.colors.accent1[4]}`
                       : `1px solid ${theme.colors.secondary[8]}`,
                     transition: `all ${theme.other.transitionDuration.normal} ${theme.other.easingFunctions.easeInOut}`,
                   }}
@@ -624,9 +639,9 @@ function LibraryPageContent() {
                       </ActionIcon>
                       <Menu position="bottom-end" shadow="md" width={180} zIndex={500}>
                         <Menu.Target>
-                          <ActionIcon 
-                            variant="subtle" 
-                            color="gray" 
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
                             size={44}
                             style={{ minWidth: 44, minHeight: 44 }}
                             aria-label="More options"
@@ -635,6 +650,21 @@ function LibraryPageContent() {
                           </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown p={4}>
+                          <Menu.Item
+                            leftSection={<IconList size={16} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToQueue(song);
+                              notifications.show({
+                                title: 'Added to Queue',
+                                message: `${song.title} added to queue`,
+                                color: 'green',
+                              });
+                            }}
+                            style={{ fontSize: '14px', padding: `${theme.spacing.sm} ${theme.spacing.md}` }}
+                          >
+                            Add to Queue
+                          </Menu.Item>
                           <Menu.Item
                             leftSection={<IconPlayerPlay size={16} />}
                             onClick={(e) => {
@@ -654,7 +684,7 @@ function LibraryPageContent() {
                             zIndex={501}
                           >
                             <Menu.Target>
-                              <Menu.Item 
+                              <Menu.Item
                                 leftSection={<IconPlaylistAdd size={16} />}
                                 style={{ fontSize: '14px', padding: `${theme.spacing.sm} ${theme.spacing.md}` }}
                               >

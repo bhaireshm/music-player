@@ -29,6 +29,7 @@ export function KeyboardShortcutsModal({ opened, onClose }: KeyboardShortcutsMod
       }
       size="lg"
       centered
+      zIndex={1000}
     >
       <Stack gap="xl">
         {Object.entries(shortcutsByCategory).map(([category, shortcuts]) => (

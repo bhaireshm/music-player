@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+
 import { getDiscoverPlaylists, getPublicPlaylists, Playlist } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import PlaylistCard from '@/components/PlaylistCard';
@@ -22,7 +22,7 @@ import { IconSearch, IconAlertCircle } from '@tabler/icons-react';
 import { useDebouncedValue } from '@mantine/hooks';
 
 function DiscoverPageContent() {
-  const router = useRouter();
+
   const theme = useMantineTheme();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,11 +31,7 @@ function DiscoverPageContent() {
   const [debouncedSearch] = useDebouncedValue(searchQuery, 500);
   const [filter, setFilter] = useState<'discover' | 'search'>('discover');
 
-  useEffect(() => {
-    fetchPlaylists();
-  }, [debouncedSearch, filter]);
-
-  const fetchPlaylists = async () => {
+  const fetchPlaylists = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -53,7 +49,11 @@ function DiscoverPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, filter]);
+
+  useEffect(() => {
+    fetchPlaylists();
+  }, [fetchPlaylists]);
 
   return (
     <Box pb={90}>
@@ -92,7 +92,7 @@ function DiscoverPageContent() {
 
           <SegmentedControl
             value={filter}
-            onChange={(value) => setFilter(value as any)}
+            onChange={(value) => setFilter(value as 'discover' | 'search')}
             data={[
               { label: 'Most Popular', value: 'discover' },
               { label: 'Search Results', value: 'search' },
@@ -103,8 +103,8 @@ function DiscoverPageContent() {
         {/* Loading State */}
         {loading && (
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} height={200} radius="md" />
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={`skeleton-${i}`} height={200} radius="md" />
             ))}
           </SimpleGrid>
         )}

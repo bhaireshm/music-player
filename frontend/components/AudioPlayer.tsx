@@ -1,8 +1,9 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import { Song } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Group,
   ActionIcon,
@@ -11,6 +12,10 @@ import {
   Image,
   Box,
   useMantineTheme,
+  Stack,
+  Tooltip,
+  ScrollArea,
+  Button,
 } from '@mantine/core';
 import {
   IconPlayerPlay,
@@ -21,6 +26,10 @@ import {
   IconVolume2,
   IconVolume3,
   IconVolumeOff,
+  IconList,
+  IconMicrophone,
+  IconEdit,
+  IconX,
 } from '@tabler/icons-react';
 import FavoriteButton from '@/components/FavoriteButton';
 import { ShortcutTooltip } from '@/components/ShortcutTooltip';
@@ -29,6 +38,7 @@ import ShuffleButton from '@/components/ShuffleButton';
 import RepeatButton from '@/components/RepeatButton';
 import PlaybackSpeedControl from '@/components/PlaybackSpeedControl';
 import ArtistName from '@/components/ArtistName';
+import EditSongModal from '@/components/EditSongModal';
 
 interface AudioPlayerProps {
   song: Song | null;
@@ -36,7 +46,11 @@ interface AudioPlayerProps {
 }
 
 export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
+  const router = useRouter();
   const theme = useMantineTheme();
+
+
+
   const {
     currentSong,
     isPlaying,
@@ -58,26 +72,35 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
   } = useAudioPlayerContext();
 
   // Enhanced colors for better visibility
-  const textColor = theme.colors.primary[9];
-  const borderColor = theme.colors.accent1[4];
-  const hoverBg = theme.colors.accent1[1];
-  const hoverBorder = theme.colors.accent1[5];
-  const trackBg = theme.colors.accent1[2];
-  const playerBg = `linear-gradient(135deg, ${theme.colors.primary[0]} 0%, ${theme.colors.accent2[0]} 100%)`;
-
-  // ARIA live region for volume announcements
-  const [volumeAnnouncement, setVolumeAnnouncement] = useState('');
+  const textColor = theme?.colors?.primary?.[9] || 'black';
+  const playerBg = theme?.colors ? `linear-gradient(135deg, ${theme.colors.primary[0]} 0%, ${theme.colors.accent2[0]} 100%)` : 'white';
 
   // Announce volume changes for screen readers
-  useEffect(() => {
-    if (isMuted) {
-      setVolumeAnnouncement('Muted');
-    } else {
-      setVolumeAnnouncement(`Volume ${Math.round(volume * 100)} percent`);
-    }
-  }, [volume, isMuted]);
+  const volumeAnnouncement = isMuted
+    ? 'Muted'
+    : `Volume ${Math.round(volume * 100)} percent`;
 
+  const [isHovering, setIsHovering] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverLeft, setHoverLeft] = useState<number>(0);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || !duration) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const time = percentage * duration;
+    setHoverTime(time);
+    setHoverLeft(x);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setHoverTime(null);
+  };
 
   // Load song when prop changes
   useEffect(() => {
@@ -93,8 +116,6 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
     }
   }, [currentSong, onSongChange]);
 
-
-
   const togglePlayPause = () => {
     if (isPlaying) {
       pause();
@@ -105,9 +126,16 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
   const renderVolumeIcon = (size: number) => {
     if (isMuted || volume === 0) return <IconVolumeOff size={size} />;
-    if (volume < 0.33) return <IconVolume size={size} />;
+    if (volume < 0.33) return <IconVolume3 size={size} />;
     if (volume < 0.66) return <IconVolume2 size={size} />;
-    return <IconVolume3 size={size} />;
+    return <IconVolume size={size} />;
+  };
+
+  const formatTime = (time: number) => {
+    if (!time || isNaN(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const hasNext = currentIndex >= 0 && currentIndex < queue.length - 1;
@@ -121,10 +149,10 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 72,
+          height: 80,
           background: playerBg,
           backdropFilter: 'blur(20px)',
-          borderTop: `2px solid ${theme.colors.accent1[3]}`,
+          borderTop: `1px solid ${theme.colors.gray[2]}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -142,389 +170,406 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
   }
 
   return (
-    <Box
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 72,
-        background: playerBg,
-        backdropFilter: 'blur(20px)',
-        borderTop: `2px solid ${theme.colors.accent1[3]}`,
-        padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-        zIndex: 100,
-        boxShadow: theme.shadows.md,
-      }}
-      role="region"
-      aria-label="Audio player"
-    >
-      {/* ARIA live region for volume announcements */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        style={{
-          position: 'absolute',
-          left: '-10000px',
-          width: '1px',
-          height: '1px',
-          overflow: 'hidden',
-        }}
-      >
-        {volumeAnnouncement}
-      </div>
-      {/* Desktop Layout */}
-      <Group
-        justify="space-between"
-        align="center"
-        h="100%"
-        visibleFrom="md"
-        wrap="nowrap"
-        gap="lg"
-      >
-        {/* Left: Album Art and Song Info */}
-        <Group 
-          gap="xs" 
-          style={{ minWidth: 0, flex: '0 0 200px', cursor: 'pointer' }}
-          onClick={() => window.location.href = `/songs/${currentSong.id}`}
+    <>
+      {/* Lyrics Overlay */}
+      {showLyrics && (
+        <Box
+          style={{
+            position: 'fixed',
+            bottom: 80,
+            right: 20,
+            width: 350,
+            maxWidth: '100vw',
+            height: 'calc(100vh - 180px)', // Leave space for header/footer
+            background: theme?.colors?.dark?.[7] || '#333',
+            borderRadius: theme?.radius?.md || 8,
+            boxShadow: theme?.shadows?.xl || 'none',
+            zIndex: 99,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            border: `1px solid ${theme?.colors?.dark?.[4] || '#555'}`,
+          }}
         >
-          <Box
-            style={{
-              position: 'relative',
-              borderRadius: theme.radius.sm,
-              overflow: 'hidden',
-              boxShadow: theme.shadows.xs,
-            }}
-          >
-            <Image
-              src={currentSong.albumArt || null}
-              alt={currentSong.title}
-              w={40}
-              h={40}
-              radius="sm"
-              fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23e0e0e0'/%3E%3Cpath d='M14 10v20l14-10z' fill='%23999'/%3E%3C/svg%3E"
-            />
-          </Box>
-          <Box style={{ minWidth: 0, flex: 1 }}>
-            <Group gap={4} wrap="nowrap">
-              <Text 
-                size="sm" 
-                fw={600} 
-                truncate 
-                c={textColor}
-                style={{ fontSize: '13px', flex: 1, minWidth: 0 }}
-              >
-                {currentSong.title}
-              </Text>
-              <div onClick={(e) => e.stopPropagation()}>
-                <FavoriteButton songId={currentSong.id} size="sm" />
-              </div>
-            </Group>
-            <ArtistName 
-              artist={currentSong.artist}
-              size="xs" 
-              truncate 
-              c="dimmed"
-              style={{ fontSize: '11px' }}
-            />
-          </Box>
-        </Group>
-
-        {/* Center: Playback Controls */}
-        <Box style={{ flex: '1 1 auto', maxWidth: 600 }}>
-          <Group gap="xs" justify="center" mb={4}>
-            <ShuffleButton size={32} />
-            
-            <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.previousSong} label="Previous">
-              <ActionIcon
-                variant="light"
-                color="accent1"
-                size={32}
-                radius="md"
-                onClick={previous}
-                disabled={!hasPrevious}
-                aria-label="Previous song"
-                styles={{
-                  root: {
-                    border: `1px solid ${borderColor}`,
-                    '&:hover': {
-                      backgroundColor: hoverBg,
-                      borderColor: hoverBorder,
-                    },
-                    transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                  },
-                }}
-              >
-                <IconPlayerSkipBack size={16} stroke={2.5} />
-              </ActionIcon>
-            </ShortcutTooltip>
-
-            <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.playPause} label={isPlaying ? 'Pause' : 'Play'}>
-              <ActionIcon
-                variant="gradient"
-                gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
-                size={38}
-                radius="xl"
-                onClick={togglePlayPause}
-                disabled={loading}
-                loading={loading}
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-                styles={{
-                  root: {
-                    boxShadow: theme.shadows.md,
-                    '&:hover': {
-                      transform: 'scale(1.05)',
-                      boxShadow: theme.shadows.lg,
-                    },
-                    transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                  },
-                }}
-              >
-                {isPlaying ? (
-                  <IconPlayerPause size={18} stroke={2.5} />
-                ) : (
-                  <IconPlayerPlay size={18} stroke={2.5} style={{ marginLeft: '2px' }} />
-                )}
-              </ActionIcon>
-            </ShortcutTooltip>
-
-            <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.nextSong} label="Next">
-              <ActionIcon
-                variant="light"
-                color="accent1"
-                size={32}
-                radius="md"
-                onClick={next}
-                disabled={!hasNext}
-                aria-label="Next song"
-                styles={{
-                  root: {
-                    border: `1px solid ${borderColor}`,
-                    '&:hover': {
-                      backgroundColor: hoverBg,
-                      borderColor: hoverBorder,
-                    },
-                    transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                  },
-                }}
-              >
-                <IconPlayerSkipForward size={16} stroke={2.5} />
-              </ActionIcon>
-            </ShortcutTooltip>
-            
-            <RepeatButton size={32} />
-          </Group>
-
-          <Slider
-            value={currentTime}
-            onChange={seek}
-            max={duration || 0}
-            min={0}
-            disabled={loading || !duration}
-            style={{ width: '100%' }}
-            size="xs"
-            aria-label="Seek position"
-            aria-valuemin={0}
-            aria-valuemax={duration || 0}
-            aria-valuenow={currentTime}
-            aria-valuetext={`${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')} of ${Math.floor((duration || 0) / 60)}:${String(Math.floor((duration || 0) % 60)).padStart(2, '0')}`}
-            styles={{
-              thumb: {
-                borderWidth: 2,
-                padding: 3,
-              },
-              track: {
-                '&::before': {
-                  backgroundColor: trackBg,
-                },
-              },
-            }}
-          />
-        </Box>
-
-        {/* Right: Volume and Speed Control */}
-        <Group gap="xs" style={{ flex: '0 0 250px' }} justify="flex-end">
-          <PlaybackSpeedControl />
-          
-          <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.mute} label={isMuted ? 'Unmute' : 'Mute'}>
-            <ActionIcon
-              variant="light"
-              color="accent1"
-              size={28}
-              radius="md"
-              onClick={toggleMute}
-              aria-label={isMuted ? 'Unmute (currently muted)' : `Mute (volume at ${Math.round(volume * 100)}%)`}
-              aria-pressed={isMuted}
-              styles={{
-                root: {
-                  border: `1px solid ${borderColor}`,
-                  '&:hover': {
-                    backgroundColor: hoverBg,
-                  },
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
-            >
-              {renderVolumeIcon(14)}
+          <Group justify="space-between" p="md" style={{ borderBottom: `1px solid ${theme?.colors?.dark?.[6] || '#444'}` }}>
+            <Text fw={700} size="lg">Lyrics</Text>
+            <ActionIcon variant="subtle" color="gray" onClick={() => setShowLyrics(false)}>
+              <IconX size={20} />
             </ActionIcon>
-          </ShortcutTooltip>
-          <Slider
-            value={volume}
-            onChange={setVolume}
-            max={1}
-            min={0}
-            step={0.01}
-            style={{ width: 55 }}
-            size="xs"
-            aria-label="Volume slider"
-            role="slider"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(volume * 100)}
-            aria-valuetext={`${Math.round(volume * 100)} percent`}
-            styles={{
-              thumb: {
-                borderWidth: 2,
-                padding: 2,
-              },
-              track: {
-                '&::before': {
-                  backgroundColor: trackBg,
-                },
-              },
-            }}
-          />
-          <Text
-            size="xs"
-            c={textColor}
-            fw={500}
-            style={{
-              minWidth: 32,
-              textAlign: 'right',
-              fontSize: '11px',
-              userSelect: 'none',
-            }}
-          >
-            {Math.round(volume * 100)}%
-          </Text>
-        </Group>
-      </Group>
+          </Group>
+          <ScrollArea style={{ flex: 1 }} p="md">
+            {currentSong.lyrics ? (
+              <Text style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                {currentSong.lyrics}
+              </Text>
+            ) : (
+              <Stack align="center" justify="center" h={200} gap="xs">
+                <Text c="dimmed">No lyrics available</Text>
+                <Button variant="light" size="xs" leftSection={<IconEdit size={14} />} onClick={() => setEditModalOpen(true)}>
+                  Add Lyrics
+                </Button>
+              </Stack>
+            )}
+          </ScrollArea>
+        </Box>
+      )}
 
-      {/* Mobile Layout */}
-      <Box hiddenFrom="md" h="100%">
-        <Group justify="space-between" align="center" h="100%" wrap="nowrap" gap="xs">
-          {/* Album Art and Song Info */}
-          <Group gap="xs" style={{ minWidth: 0, flex: 1 }}>
+      <EditSongModal
+        opened={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        song={currentSong}
+        onSuccess={() => {
+          // Refresh song data if needed, but currentSong should update via context/API eventually
+          // Ideally we should reload the song metadata
+        }}
+      />
+
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 80,
+          background: playerBg,
+          backdropFilter: 'blur(20px)',
+          borderTop: `1px solid ${theme.colors.gray[2]}`,
+          padding: `0 ${theme.spacing.md}`,
+          zIndex: 100,
+          boxShadow: theme.shadows.md,
+          display: 'flex',
+          alignItems: 'center',
+        }}
+        role="region"
+        aria-label="Audio player"
+      >
+        {/* ARIA live region for volume announcements */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: 'absolute',
+            left: '-10000px',
+            width: '1px',
+            height: '1px',
+            overflow: 'hidden',
+          }}
+        >
+          {volumeAnnouncement}
+        </div>
+
+        {/* Desktop Layout */}
+        <Group
+          justify="space-between"
+          align="center"
+          w="100%"
+          visibleFrom="md"
+          wrap="nowrap"
+          gap="lg"
+        >
+          {/* Left: Album Art and Song Info */}
+          <Group
+            gap="sm"
+            style={{ minWidth: 0, flex: '0 0 250px', cursor: 'pointer' }}
+            onClick={() => router.push(`/songs/${currentSong.id}`)}
+          >
             <Box
               style={{
+                position: 'relative',
                 borderRadius: theme.radius.sm,
                 overflow: 'hidden',
                 boxShadow: theme.shadows.xs,
-                flexShrink: 0,
               }}
             >
               <Image
                 src={currentSong.albumArt || null}
                 alt={currentSong.title}
-                w={40}
-                h={40}
+                w={56}
+                h={56}
                 radius="sm"
-                fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23e0e0e0'/%3E%3Cpath d='M14 10v20l14-10z' fill='%23999'/%3E%3C/svg%3E"
+                fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Crect width='56' height='56' fill='%23e0e0e0'/%3E%3Cpath d='M20 16v24l18-12z' fill='%23999'/%3E%3C/svg%3E"
               />
             </Box>
             <Box style={{ minWidth: 0, flex: 1 }}>
-              <Group gap={4} wrap="nowrap" align="center">
-                <Text 
-                  size="xs" 
-                  fw={600} 
-                  truncate 
+              <Group gap={4} wrap="nowrap">
+                <Text
+                  size="sm"
+                  fw={600}
+                  truncate
                   c={textColor}
-                  style={{ fontSize: '12px', flex: 1, minWidth: 0 }}
+                  style={{ fontSize: '14px', flex: 1, minWidth: 0 }}
                 >
                   {currentSong.title}
                 </Text>
-                <FavoriteButton songId={currentSong.id} size="sm" />
+                <div onClick={(e) => e.stopPropagation()}>
+                  <FavoriteButton songId={currentSong.id} size="sm" />
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ActionIcon variant="subtle" size="sm" color="gray" onClick={() => setEditModalOpen(true)}>
+                    <IconEdit size={14} />
+                  </ActionIcon>
+                </div>
               </Group>
-              <ArtistName 
+              <ArtistName
                 artist={currentSong.artist}
-                size="xs" 
-                truncate 
+                size="xs"
+                truncate
                 c="dimmed"
-                style={{ fontSize: '10px' }}
+                style={{ fontSize: '12px' }}
               />
             </Box>
           </Group>
 
-          {/* Playback Controls */}
-          <Group gap={6} wrap="nowrap">
+          {/* Center: Playback Controls and Progress */}
+          <Stack gap={4} style={{ flex: '1 1 auto', maxWidth: 600 }} align="center">
+            <Group gap="md" justify="center">
+              <ShuffleButton size={20} />
+
+              <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.previousSong} label="Previous">
+                <ActionIcon
+                  variant="subtle"
+                  color="dark"
+                  size="lg"
+                  radius="xl"
+                  onClick={previous}
+                  disabled={!hasPrevious}
+                  aria-label="Previous song"
+                >
+                  <IconPlayerSkipBack size={20} fill="currentColor" />
+                </ActionIcon>
+              </ShortcutTooltip>
+
+              <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.playPause} label={isPlaying ? 'Pause' : 'Play'}>
+                <ActionIcon
+                  variant="filled"
+                  color="dark"
+                  size={40}
+                  radius="xl"
+                  onClick={togglePlayPause}
+                  disabled={loading}
+                  loading={loading}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                  style={{
+                    transition: 'transform 0.1s ease',
+                  }}
+                >
+                  {isPlaying ? (
+                    <IconPlayerPause size={20} fill="currentColor" />
+                  ) : (
+                    <IconPlayerPlay size={20} fill="currentColor" style={{ marginLeft: 2 }} />
+                  )}
+                </ActionIcon>
+              </ShortcutTooltip>
+
+              <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.nextSong} label="Next">
+                <ActionIcon
+                  variant="subtle"
+                  color="dark"
+                  size="lg"
+                  radius="xl"
+                  onClick={next}
+                  disabled={!hasNext}
+                  aria-label="Next song"
+                >
+                  <IconPlayerSkipForward size={20} fill="currentColor" />
+                </ActionIcon>
+              </ShortcutTooltip>
+
+              <RepeatButton size={20} />
+            </Group>
+
+            <Group w="100%" gap="xs" align="center">
+              <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums', minWidth: 35, textAlign: 'right' }}>
+                {formatTime(currentTime)}
+              </Text>
+              <Box
+                ref={progressBarRef}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', position: 'relative' }}
+                onMouseEnter={() => setIsHovering(true)}
+                onMouseLeave={handleMouseLeave}
+                onMouseMove={handleMouseMove}
+              >
+                {hoverTime !== null && (
+                  <Box
+                    style={{
+                      position: 'absolute',
+                      left: hoverLeft,
+                      bottom: '100%',
+                      marginBottom: 5,
+                      transform: 'translateX(-50%)',
+                      backgroundColor: theme.colors.dark[8],
+                      color: 'white',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      pointerEvents: 'none',
+                      whiteSpace: 'nowrap',
+                      zIndex: 10,
+                      boxShadow: theme.shadows.sm,
+                    }}
+                  >
+                    {formatTime(hoverTime)}
+                  </Box>
+                )}
+                <Slider
+                  value={currentTime}
+                  onChange={seek}
+                  max={duration || 1}
+                  min={0}
+                  disabled={loading || !duration}
+                  style={{ width: '100%' }}
+                  size="xs"
+                  color="dark"
+                  thumbSize={10}
+                  aria-label="Seek position"
+                  styles={{
+                    thumb: {
+                      transition: 'opacity 0.2s',
+                      opacity: isHovering ? 1 : 0,
+                    },
+                    track: {
+                      cursor: 'pointer',
+                    },
+                  }}
+                  label={null}
+                />
+              </Box>
+              <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums', minWidth: 35 }}>
+                {formatTime(duration)}
+              </Text>
+            </Group>
+          </Stack>
+
+          {/* Right: Volume and Speed Control */}
+          <Group gap="sm" style={{ flex: '0 0 250px' }} justify="flex-end">
+            <PlaybackSpeedControl />
+
+            <Group gap={4} align="center">
+              <ShortcutTooltip shortcut={KEYBOARD_SHORTCUTS.mute} label={isMuted ? 'Unmute' : 'Mute'}>
+                <ActionIcon
+                  variant="subtle"
+                  color="dark"
+                  size="sm"
+                  onClick={toggleMute}
+                  aria-label={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {renderVolumeIcon(18)}
+                </ActionIcon>
+              </ShortcutTooltip>
+              <Slider
+                value={volume}
+                onChange={setVolume}
+                max={1}
+                min={0}
+                step={0.01}
+                style={{ width: 80 }}
+                size="xs"
+                color="dark"
+                thumbSize={10}
+                aria-label="Volume slider"
+              />
+            </Group>
+
+            <Tooltip label="Lyrics">
+              <ActionIcon
+                variant={showLyrics ? "filled" : "subtle"}
+                color={showLyrics ? "primary" : "dark"}
+                onClick={() => setShowLyrics(!showLyrics)}
+              >
+                <IconMicrophone size={20} />
+              </ActionIcon>
+            </Tooltip>
+
+            <Tooltip label="Queue">
+              <ActionIcon variant="subtle" color="dark">
+                <IconList size={20} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </Group>
+
+        {/* Mobile Layout */}
+        <Box hiddenFrom="md" w="100%">
+          {/* Progress Bar at Top */}
+          <Slider
+            value={currentTime}
+            onChange={seek}
+            max={duration || 1}
+            min={0}
+            disabled={loading || !duration}
+            size="xs"
+            color="dark"
+            thumbSize={0} // Hide thumb on mobile
+            style={{
+              position: 'absolute',
+              top: -1,
+              left: 0,
+              right: 0,
+              zIndex: 101
+            }}
+            styles={{
+              track: { borderRadius: 0 },
+              bar: { borderRadius: 0 },
+            }}
+          />
+
+          <Group justify="space-between" align="center" wrap="nowrap" gap="xs" px="xs">
+            {/* Album Art and Song Info */}
+            <Group gap="xs" style={{ minWidth: 0, flex: 1 }} onClick={() => router.push(`/songs/${currentSong.id}`)}>
+              <Image
+                src={currentSong.albumArt || null}
+                alt={currentSong.title}
+                w={48}
+                h={48}
+                radius="sm"
+                fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23e0e0e0'/%3E%3Cpath d='M18 14v20l16-10z' fill='%23999'/%3E%3C/svg%3E"
+              />
+              <Box style={{ minWidth: 0, flex: 1 }}>
+                <Text size="sm" fw={600} truncate c={textColor}>
+                  {currentSong.title}
+                </Text>
+                <ArtistName
+                  artist={currentSong.artist}
+                  size="xs"
+                  truncate
+                  c="dimmed"
+                />
+              </Box>
+            </Group>
+
+            {/* Favorite Button */}
+            <FavoriteButton songId={currentSong.id} size="md" />
+
+            {/* Lyrics Button Mobile */}
             <ActionIcon
-              variant="light"
-              color="accent1"
-              size={36}
-              radius="md"
-              onClick={previous}
-              disabled={!hasPrevious}
-              aria-label="Previous song"
-              styles={{
-                root: {
-                  border: `1px solid ${borderColor}`,
-                  '&:hover': {
-                    backgroundColor: hoverBg,
-                  },
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
+              variant={showLyrics ? "filled" : "subtle"}
+              color={showLyrics ? "primary" : "dark"}
+              onClick={() => setShowLyrics(!showLyrics)}
+              size="lg"
             >
-              <IconPlayerSkipBack size={16} stroke={2.5} />
+              <IconMicrophone size={22} />
             </ActionIcon>
 
+            {/* Play/Pause Button */}
             <ActionIcon
-              variant="gradient"
-              gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
-              size={42}
+              variant="filled"
+              color="dark"
+              size="lg"
               radius="xl"
               onClick={togglePlayPause}
               disabled={loading}
               loading={loading}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-              styles={{
-                root: {
-                  boxShadow: theme.shadows.md,
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
             >
               {isPlaying ? (
-                <IconPlayerPause size={20} stroke={2.5} />
+                <IconPlayerPause size={22} fill="currentColor" />
               ) : (
-                <IconPlayerPlay size={20} stroke={2.5} style={{ marginLeft: '2px' }} />
+                <IconPlayerPlay size={22} fill="currentColor" style={{ marginLeft: 2 }} />
               )}
             </ActionIcon>
-
-            <ActionIcon
-              variant="light"
-              color="accent1"
-              size={36}
-              radius="md"
-              onClick={next}
-              disabled={!hasNext}
-              aria-label="Next song"
-              styles={{
-                root: {
-                  border: `1px solid ${borderColor}`,
-                  '&:hover': {
-                    backgroundColor: hoverBg,
-                  },
-                  transition: `all ${theme.other.transitionDuration.fast} cubic-bezier(0.4, 0, 0.2, 1)`,
-                },
-              }}
-            >
-              <IconPlayerSkipForward size={16} stroke={2.5} />
-            </ActionIcon>
           </Group>
-        </Group>
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }
