@@ -45,6 +45,30 @@ export function cleanMetadataString(text: string): string {
 }
 
 /**
+ * Removes track numbers from song titles
+ * Examples: "01 Song Name", "1. Song Name", "Track 1 - Song Name", "01-Song Name"
+ * @param title - The title to clean
+ * @returns The cleaned title
+ */
+export function removeTrackNumbers(title: string): string {
+    if (!title) return title;
+
+    let cleaned = title;
+
+    // Remove leading track numbers with various formats:
+    // "01 Song", "1. Song", "01. Song", "01 - Song", "Track 01 - Song", "01-Song"
+    cleaned = cleaned.replace(/^(?:track\s*)?\d{1,3}[\s.-]*[-–—]?\s*/i, '');
+
+    // Remove numbers at the end in brackets/parentheses: "Song Name (1)", "Song Name [01]"
+    cleaned = cleaned.replace(/\s*[\[(]\d{1,3}[\])]\s*$/, '');
+
+    // Remove trailing numbers with dash: "Song Name - 1", "Song Name-01"
+    cleaned = cleaned.replace(/\s*[-–—]\s*\d{1,3}\s*$/, '');
+
+    return cleaned.trim();
+}
+
+/**
  * Cleans an object containing metadata fields
  * @param metadata - The metadata object
  * @returns The cleaned metadata object
@@ -52,7 +76,12 @@ export function cleanMetadataString(text: string): string {
 export function cleanMetadata(metadata: any): any {
     const cleaned: any = { ...metadata };
 
-    if (cleaned.title) cleaned.title = cleanMetadataString(cleaned.title);
+    // Clean title: remove URLs, domains, and track numbers
+    if (cleaned.title) {
+        cleaned.title = cleanMetadataString(cleaned.title);
+        cleaned.title = removeTrackNumbers(cleaned.title);
+    }
+
     if (cleaned.artist) cleaned.artist = cleanMetadataString(cleaned.artist);
     if (cleaned.album) cleaned.album = cleanMetadataString(cleaned.album);
 
