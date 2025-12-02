@@ -1,3 +1,4 @@
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import { Notifications } from "@mantine/notifications";
 import ThemeProvider from "@/components/ThemeProvider";
@@ -73,6 +74,19 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-EEJT1HKRBB"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-EEJT1HKRBB');
+          `}
+        </Script>
         <ThemeProvider>
           <Notifications position="top-right" />
           <ServiceWorkerRegistration />
