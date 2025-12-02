@@ -78,7 +78,9 @@ The entire UI uses a compact scale. **Do not increase these sizes arbitrarily.**
   - **Documentation:** Removed scattered/redundant `.md` files in favor of this `CONTEXT.md`.
 
 ## 6. Development Rules
-1.  **Package Manager:** Always use `pnpm`.
-2.  **Linting:** Fix lint errors immediately.
-3.  **Build:** Always verify `pnpm build` (frontend & backend) before finishing a task.
-4.  **Files:** Do not create random documentation files in root. Update this file instead.
+1.  **Principles:** Adhere to **DRY** (Don't Repeat Yourself), **KISS** (Keep It Simple, Stupid), and **SOLID** principles for all new code.
+2.  **Reuse:** **ALWAYS** check for existing implementations, components, or utilities before creating new files. Reuse existing code whenever possible to avoid duplication.
+3.  **Package Manager:** Always use `pnpm`.
+4.  **Linting:** Fix lint errors immediately.
+5.  **Build:** Always verify `pnpm build` (frontend & backend) before finishing a task.
+6.  **Files:** Do not create random documentation files in root. Update this file instead.
