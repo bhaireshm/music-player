@@ -4,7 +4,7 @@ import { generateFingerprint, checkDuplicate, FingerprintResult } from '../servi
 import { uploadFile, getFile, fileExists } from '../services/storageService';
 import { Song } from '../models/Song';
 import { randomUUID } from 'crypto';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { r2Client, bucketName } from '../config/storage';
 import { extractMetadata, AudioMetadata } from '../services/metadataService';
 import { parseArtists } from '../utils/artistParser';
@@ -318,6 +318,7 @@ export async function uploadSong(
         genre: song.genre,
         duration: song.duration,
         mimeType: song.mimeType,
+        uploadedBy: song.uploadedBy,
         createdAt: song.createdAt,
       },
       metadata: {
@@ -359,6 +360,7 @@ export async function getAllSongs(
         title: song.title,
         artist: song.artist,
         mimeType: song.mimeType,
+        uploadedBy: song.uploadedBy,
         createdAt: song.createdAt,
       })),
     });
@@ -411,6 +413,7 @@ export async function getSongMetadata(
         year: song.year,
         genre: song.genre,
         mimeType: song.mimeType,
+        uploadedBy: song.uploadedBy,
         createdAt: song.createdAt,
       },
     });
@@ -584,6 +587,7 @@ export async function updateSong(
         genre: song.genre,
         lyrics: song.lyrics,
         mimeType: song.mimeType,
+        uploadedBy: song.uploadedBy,
         createdAt: song.createdAt,
       },
     });
@@ -639,10 +643,10 @@ export async function deleteSong(
       return;
     }
 
+
     // Delete file from R2 storage
     try {
       console.log(`Deleting file from R2: ${song.fileKey}`);
-      const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
 
       const deleteCommand = new DeleteObjectCommand({
         Bucket: bucketName,

@@ -322,6 +322,17 @@ export async function updateSong(
 }
 
 /**
+ * Delete a song
+ * Only the uploader can delete their own songs
+ */
+export async function deleteSong(songId: string): Promise<{ message: string; deletedSong: { id: string; title: string; artist: string } }> {
+  const response = await makeAuthenticatedRequest(`/songs/${songId}`, {
+    method: 'DELETE',
+  });
+  return parseResponse<{ message: string; deletedSong: { id: string; title: string; artist: string } }>(response);
+}
+
+/**
  * Album API
  */
 

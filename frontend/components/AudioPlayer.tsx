@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import { Song } from '@/lib/api';
+import { useSongActions } from '@/hooks/useSongActions';
 import { useEffect, useState, useRef } from 'react';
 import {
   Group,
@@ -69,6 +70,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
     next,
     previous,
     jumpToQueueIndex,
+    removeFromQueue,
   } = useAudioPlayerContext();
 
   // Enhanced colors for better visibility
@@ -83,10 +85,22 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverLeft, setHoverLeft] = useState<number>(0);
+
+
+  // Use song actions hook for current song (always call to avoid hook order issues)
+  const songActions = useSongActions(currentSong || { id: '', title: '', artist: '', mimeType: '', createdAt: '' }, {
+    onDeleteSuccess: () => {
+      if (currentSong) {
+        const currentIndex = queue.findIndex(s => s.id === currentSong.id);
+        if (currentIndex !== -1) {
+          removeFromQueue(currentIndex);
+        }
+      }
+    },
+  });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressBarRef.current || !duration) return;
@@ -99,8 +113,16 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
   };
 
   const handleMouseLeave = () => {
-    setIsHovering(false);
     setHoverTime(null);
+  };
+
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || !duration) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const time = percentage * duration;
+    seek(time);
   };
 
   // Load song when prop changes
@@ -133,7 +155,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
   };
 
   const formatTime = (time: number) => {
-    if (!time || isNaN(time)) return '0:00';
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -217,7 +239,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
             ) : (
               <Stack align="center" justify="center" h={200} gap="xs">
                 <Text c="dimmed">No lyrics available</Text>
-                <Button variant="light" size="xs" leftSection={<IconEdit size={14} />} onClick={() => setEditModalOpen(true)}>
+                <Button variant="light" size="xs" leftSection={<IconEdit size={14} />} onClick={songActions.handleEdit}>
                   Add Lyrics
                 </Button>
               </Stack>
@@ -226,15 +248,17 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
         </Box>
       )}
 
-      <EditSongModal
-        opened={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        song={currentSong}
-        onSuccess={() => {
-          // Refresh song data if needed, but currentSong should update via context/API eventually
-          // Ideally we should reload the song metadata
-        }}
-      />
+      {currentSong && (
+        <EditSongModal
+          opened={songActions.editModalOpen}
+          onClose={songActions.closeEditModal}
+          song={currentSong}
+          onSuccess={() => {
+            // Song will be updated in the queue automatically on next play
+            songActions.closeEditModal();
+          }}
+        />
+      )}
 
       <Box
         style={{
@@ -318,7 +342,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
                   <FavoriteButton songId={currentSong.id} size="sm" />
                 </div>
                 <div onClick={(e) => e.stopPropagation()}>
-                  <ActionIcon variant="subtle" size="sm" color="gray" onClick={() => setEditModalOpen(true)}>
+                  <ActionIcon variant="subtle" size="sm" color="gray" onClick={songActions.handleEdit}>
                     <IconEdit size={14} />
                   </ActionIcon>
                 </div>
@@ -401,6 +425,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={handleMouseLeave}
                 onMouseMove={handleMouseMove}
+                onClick={handleProgressBarClick}
               >
                 {hoverTime !== null && (
                   <Box
@@ -569,7 +594,7 @@ export default function AudioPlayer({ song, onSongChange }: AudioPlayerProps) {
 
             {/* Play/Pause Button */}
             <ActionIcon
-              variant="filled"
+              variant={showLyrics ? "filled" : "subtle"}
               color="dark"
               size="lg"
               radius="xl"

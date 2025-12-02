@@ -99,8 +99,9 @@ export default function Navigation({ opened, toggle }: NavigationProps) {
                 fw={700}
                 c={theme.colors.primary[0]}
                 style={{ letterSpacing: '0.5px' }}
+                title='Naada'
               >
-                Naada
+                ನಾದ
               </Text>
             </Group>
             {/* Mobile Logo (Icon only) */}

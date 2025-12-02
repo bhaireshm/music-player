@@ -6,6 +6,8 @@ import { getSong, Song } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
+import { useSongActions } from '@/hooks/useSongActions';
+import EditSongModal from '@/components/EditSongModal';
 import {
   Container,
   Paper,
@@ -27,6 +29,8 @@ import {
   IconAlertCircle,
   IconMusic,
   IconList,
+  IconEdit,
+  IconTrash,
 } from '@tabler/icons-react';
 
 function SongDetailsPageContent() {
@@ -38,6 +42,11 @@ function SongDetailsPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { setQueue, currentSong: audioCurrentSong, addToQueue } = useAudioPlayerContext();
+
+  // Use the song actions hook (with null check in render)
+  const songActions = useSongActions(song || {} as Song, {
+    onDeleteSuccess: () => router.push('/library'),
+  });
 
   useEffect(() => {
     if (songId) {
@@ -241,10 +250,40 @@ function SongDetailsPageContent() {
                       </Menu.Target>
                       <AddToPlaylistMenu songId={song.id} />
                     </Menu>
+
+                    {songActions?.isOwner && (
+                      <>
+                        <Button
+                          variant="light"
+                          color="blue"
+                          leftSection={<IconEdit size={18} />}
+                          onClick={songActions.handleEdit}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="light"
+                          color="red"
+                          leftSection={<IconTrash size={18} />}
+                          onClick={songActions.handleDelete}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    )}
                   </Group>
                 </Stack>
               </Group>
             </Box>
+
+            {songActions && (
+              <EditSongModal
+                opened={songActions.editModalOpen}
+                onClose={songActions.closeEditModal}
+                song={song}
+                onSuccess={fetchSongDetails}
+              />
+            )}
 
             {/* Mobile Layout */}
             <Stack gap="xl" hiddenFrom="md">
@@ -357,6 +396,27 @@ function SongDetailsPageContent() {
                     </Menu.Target>
                     <AddToPlaylistMenu songId={song.id} />
                   </Menu>
+
+                  {songActions?.isOwner && (
+                    <Group grow>
+                      <Button
+                        variant="light"
+                        color="blue"
+                        leftSection={<IconEdit size={18} />}
+                        onClick={songActions.handleEdit}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="light"
+                        color="red"
+                        leftSection={<IconTrash size={18} />}
+                        onClick={songActions.handleDelete}
+                      >
+                        Delete
+                      </Button>
+                    </Group>
+                  )}
                 </Stack>
               </Stack>
             </Stack>

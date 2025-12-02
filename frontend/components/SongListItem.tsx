@@ -2,7 +2,7 @@
 
 import { Song, getSongStreamUrl } from '@/lib/api';
 import { Box, Group, Text, ActionIcon, Menu, useMantineTheme } from '@mantine/core';
-import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle, IconDownload, IconCheck } from '@tabler/icons-react';
+import { IconPlayerPlay, IconDots, IconPlaylistAdd, IconInfoCircle, IconDownload, IconCheck, IconTrash } from '@tabler/icons-react';
 import PlayingAnimation from '@/components/PlayingAnimation';
 import FavoriteButton from '@/components/FavoriteButton';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
@@ -11,6 +11,7 @@ import { formatArtists } from '@/lib/artistUtils';
 import { downloadManager } from '@/lib/offline/downloadManager';
 import { notifications } from '@mantine/notifications';
 import { useState, useEffect } from 'react';
+import { useSongActions } from '@/hooks/useSongActions';
 
 interface SongListItemProps {
   song: Song;
@@ -36,6 +37,11 @@ export default function SongListItem({
   const theme = useMantineTheme();
   const [isOffline, setIsOffline] = useState(false);
 
+  // Use song actions hook
+  const { canDelete, handleDelete } = useSongActions(song, {
+    onDeleteSuccess: onRefresh,
+  });
+
   useEffect(() => {
     const checkOfflineStatus = async () => {
       const offline = await downloadManager.isSongOffline(song.id);
@@ -46,7 +52,7 @@ export default function SongListItem({
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (isOffline) {
       // Remove from offline storage
       try {
@@ -71,7 +77,7 @@ export default function SongListItem({
     try {
       const songUrl = getSongStreamUrl(song.id);
       const artist = Array.isArray(song.artist) ? formatArtists(song.artist) : song.artist;
-      
+
       await downloadManager.queueDownload(
         song.id,
         song.title,
@@ -215,6 +221,20 @@ export default function SongListItem({
               >
                 Details
               </Menu.Item>
+
+              {canDelete && (
+                <>
+                  <Menu.Divider />
+                  <Menu.Item
+                    leftSection={<IconTrash size={16} />}
+                    color="red"
+                    onClick={handleDelete}
+                    style={{ fontSize: '14px', padding: `${theme.spacing.sm} ${theme.spacing.md}` }}
+                  >
+                    Delete
+                  </Menu.Item>
+                </>
+              )}
             </Menu.Dropdown>
           </Menu>
         </Group>

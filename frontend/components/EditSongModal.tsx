@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Modal, TextInput, Textarea, Button, Stack, Group, NumberInput, MultiSelect } from '@mantine/core';
+import { Modal, TextInput, Textarea, Button, Stack, Group, MultiSelect } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { Song, updateSong } from '@/lib/api';
