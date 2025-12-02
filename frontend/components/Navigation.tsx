@@ -1,7 +1,9 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getUserProfile, UserProfile } from '@/lib/api';
 import {
   Burger,
   Button,
@@ -35,9 +37,22 @@ export default function Navigation({ opened, toggle }: NavigationProps) {
   const { user, signOut } = useAuth();
   const theme = useMantineTheme();
 
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      getUserProfile()
+        .then(setUserProfile)
+        .catch((err) => console.error('Failed to fetch user profile:', err));
+    } else {
+      setUserProfile(null);
+    }
+  }, [user]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
+      setUserProfile(null);
     } catch (error) {
       console.error('Failed to sign out:', error);
     }
@@ -134,8 +149,8 @@ export default function Navigation({ opened, toggle }: NavigationProps) {
                   }}
                 >
                   <UserAvatar
-                    avatarUrl={user.photoURL || undefined}
-                    displayName={user.displayName || undefined}
+                    avatarUrl={userProfile?.avatarUrl || user.photoURL || undefined}
+                    displayName={userProfile?.displayName || user.displayName || undefined}
                     email={user.email || undefined}
                     size="md"
                   />
