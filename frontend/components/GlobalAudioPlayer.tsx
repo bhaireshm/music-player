@@ -29,7 +29,6 @@ export function GlobalAudioPlayerProvider({ children }: GlobalAudioPlayerProvide
   return (
     <GlobalAudioPlayerContext.Provider value={{ currentSong, setCurrentSong }}>
       {children}
-      <AudioPlayer song={currentSong} />
     </GlobalAudioPlayerContext.Provider>
   );
 }

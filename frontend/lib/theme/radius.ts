@@ -1,10 +1,10 @@
 export const radius = {
   defaultRadius: 'sm' as const,
   radius: {
-    xs: '0.125rem',  // 2px
-    sm: '0.25rem',   // 4px
-    md: '0.5rem',    // 8px
-    lg: '1rem',      // 16px
-    xl: '2rem',      // 32px
+    xs: '0.1rem',  // 1.6px
+    sm: '0.2rem',   // 3.2px
+    md: '0.4rem',    // 6.4px
+    lg: '0.8rem',      // 12.8px
+    xl: '1.6rem',      // 25.6px
   },
 };

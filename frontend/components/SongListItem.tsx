@@ -113,7 +113,7 @@ export default function SongListItem({
 
   return (
     <Box
-      p="md"
+      p={{ base: 'xs', sm: 'md' }}
       style={{
         background: isCurrentSong
           ? getActiveBackground(theme)

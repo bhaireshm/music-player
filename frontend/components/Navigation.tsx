@@ -8,6 +8,7 @@ import {
   Group,
   Menu,
   Text,
+  Box,
   useMantineTheme,
 } from '@mantine/core';
 import {
@@ -65,9 +66,9 @@ export default function Navigation({ opened, toggle }: NavigationProps) {
         }}
       />
 
-      <Group h="100%" px={theme.spacing.md} justify="space-between" align="center" style={{ position: 'relative', zIndex: 101 }} wrap="nowrap">
+      <Group h="100%" px={{ base: 'xs', sm: 'md' }} justify="space-between" align="center" style={{ position: 'relative', zIndex: 101 }} wrap="nowrap">
         {/* Logo and Burger Menu */}
-        <Group gap={theme.spacing.md} align="center" wrap="nowrap">
+        <Group gap="xs" align="center" wrap="nowrap">
           {user && (
             <Burger
               opened={opened}
@@ -113,9 +114,9 @@ export default function Navigation({ opened, toggle }: NavigationProps) {
 
         {/* Search Bar */}
         {user && (
-          <div style={{ flex: 1, maxWidth: 400, margin: '0 16px' }}>
+          <Box style={{ flex: 1, maxWidth: 400 }} mx={{ base: 'xs', sm: 'md' }}>
             <SearchInput />
-          </div>
+          </Box>
         )}
 
         {/* Right Side: Offline Indicator, User Menu or Auth Buttons */}
@@ -133,6 +134,8 @@ export default function Navigation({ opened, toggle }: NavigationProps) {
                   }}
                 >
                   <UserAvatar
+                    avatarUrl={user.photoURL || undefined}
+                    displayName={user.displayName || undefined}
                     email={user.email || undefined}
                     size="md"
                   />
