@@ -1,20 +1,31 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { Modal, TextInput, Textarea, Button, Stack, Group, MultiSelect } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { Song, updateSong } from '@/lib/api';
+import { useSongActions } from '@/hooks/useSongActions';
 
 interface EditSongModalProps {
     opened: boolean;
     onClose: () => void;
     song: Song;
     onSuccess: () => void;
+    onDelete?: () => void;
 }
 
-export default function EditSongModal({ opened, onClose, song, onSuccess }: EditSongModalProps) {
+export default function EditSongModal({ opened, onClose, song, onSuccess, onDelete }: EditSongModalProps) {
     const [loading, setLoading] = useState(false);
+
+    // Use song actions hook for delete functionality
+    const { canDelete, handleDelete } = useSongActions(song, {
+        onDeleteSuccess: () => {
+            onClose();
+            if (onDelete) {
+                onDelete();
+            }
+        },
+    });
+
 
     const form = useForm({
         initialValues: {
@@ -120,9 +131,23 @@ export default function EditSongModal({ opened, onClose, song, onSuccess }: Edit
                         autosize
                         {...form.getInputProps('lyrics')}
                     />
-                    <Group justify="flex-end" mt="md">
-                        <Button variant="default" onClick={onClose}>Cancel</Button>
-                        <Button type="submit" loading={loading}>Save Changes</Button>
+                    <Group justify="space-between" mt="md">
+                        {canDelete && (
+                            <Button
+                                variant="subtle"
+                                color="red"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDelete();
+                                }}
+                            >
+                                Delete Song
+                            </Button>
+                        )}
+                        <Group ml="auto">
+                            <Button variant="default" onClick={onClose}>Cancel</Button>
+                            <Button type="submit" loading={loading}>Save Changes</Button>
+                        </Group>
                     </Group>
                 </Stack>
             </form>

@@ -44,15 +44,21 @@ router.post('/upload', verifyToken, upload.single('file'), uploadSong);
 // GET /songs/ai-metadata-status - Get AI metadata processing status
 router.get('/ai-metadata-status', verifyToken, getAIMetadataStatus);
 
-import { enrichSongMetadata } from '../controllers/metadataEnrichmentController';
+import { enrichSongMetadata, aiEnhancedMetadataCleanup, batchMetadataCleanup } from '../controllers/metadataEnrichmentController';
 
 // ... existing imports ...
 
 // POST /songs/process-ai-metadata - Process existing songs to extract AI metadata
 router.post('/process-ai-metadata', verifyToken, processAIMetadata);
 
+// POST /songs/batch-cleanup - Batch metadata cleanup for multiple songs (MUST be before /:id routes)
+router.post('/batch-cleanup', verifyToken, batchMetadataCleanup);
+
 // POST /songs/:id/enrich - Enrich song metadata from online sources
 router.post('/:id/enrich', verifyToken, enrichSongMetadata);
+
+// POST /songs/:id/cleanup - AI-enhanced metadata cleanup (fix swapped fields, clean junk)
+router.post('/:id/cleanup', verifyToken, aiEnhancedMetadataCleanup);
 
 // GET /songs/:id/metadata - Get song metadata by ID
 router.get('/:id/metadata', verifyToken, getSongMetadata);
