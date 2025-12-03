@@ -45,6 +45,7 @@ import InfiniteScroll from '@/components/InfiniteScroll';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { IconHeart, IconHeartFilled, IconCheck } from '@tabler/icons-react';
 import { downloadManager } from '@/lib/offline/downloadManager';
+import { useAuth } from '@/hooks/useAuth';
 
 // Favorite Menu Item Component to avoid button nesting
 function FavoriteMenuItem({ songId }: { songId: string }) {
@@ -101,6 +102,8 @@ function LibraryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const theme = useMantineTheme();
+  const { user } = useAuth();
+  const canUpload = user?.uid === 'bpFfQ3JtW8Vy5YJvXmXzRzuNr4W2';
 
   // Get filter parameters from URL
   const artistFilter = searchParams.get('artist');
@@ -348,32 +351,34 @@ function LibraryPageContent() {
                   Play All
                 </Button>
               )}
-              <Menu shadow="md" width={200}>
-                <Menu.Target>
-                  <Button
-                    leftSection={<IconUpload size={18} />}
-                    variant="gradient"
-                    gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
-                    size="md"
-                  >
-                    Upload
-                  </Button>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  <Menu.Item
-                    leftSection={<IconUpload size={16} />}
-                    onClick={() => setShowUploadModal(true)}
-                  >
-                    Single Upload
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={<IconUpload size={16} />}
-                    onClick={() => setShowBulkUploadModal(true)}
-                  >
-                    Bulk Upload
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
+              {canUpload && (
+                <Menu shadow="md" width={200}>
+                  <Menu.Target>
+                    <Button
+                      leftSection={<IconUpload size={18} />}
+                      variant="gradient"
+                      gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
+                      size="md"
+                    >
+                      Upload
+                    </Button>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item
+                      leftSection={<IconUpload size={16} />}
+                      onClick={() => setShowUploadModal(true)}
+                    >
+                      Single Upload
+                    </Menu.Item>
+                    <Menu.Item
+                      leftSection={<IconUpload size={16} />}
+                      onClick={() => setShowBulkUploadModal(true)}
+                    >
+                      Bulk Upload
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              )}
             </Group>
           </Group>
         </Box>
@@ -433,15 +438,17 @@ function LibraryPageContent() {
               <Text c="dimmed" size="sm" ta="center" maw={400}>
                 Get started by uploading your first song to build your library.
               </Text>
-              <Button
-                leftSection={<IconUpload size={18} />}
-                onClick={() => setShowUploadModal(true)}
-                variant="gradient"
-                gradient={{ from: 'accent2.6', to: 'accent2.7', deg: 135 }}
-                size="md"
-              >
-                Upload Your First Song
-              </Button>
+              {canUpload && (
+                <Button
+                  leftSection={<IconUpload size={18} />}
+                  onClick={() => setShowUploadModal(true)}
+                  variant="gradient"
+                  gradient={{ from: 'accent2.6', to: 'accent2.7', deg: 135 }}
+                  size="md"
+                >
+                  Upload Your First Song
+                </Button>
+              )}
             </Stack>
           </Box>
         )}

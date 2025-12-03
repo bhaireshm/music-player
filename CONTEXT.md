@@ -215,6 +215,7 @@ curl -X POST http://localhost:3001/songs/batch-cleanup \
    - **Queue Reordering:** Fixed hydration issues with drag-and-drop by implementing a `StrictModeDroppable` component.
    - **Song Details:** Further optimized header height and layout to reduce empty space.
    - **Mobile Visuals:** Reduced album art size on mobile view for better layout balance.
+   - **Access Control:** Restricted upload functionality to user ID 'bhairesh'.
 
 ### Previous Changes (Dec 2025):
 - **UI Refactor:**
