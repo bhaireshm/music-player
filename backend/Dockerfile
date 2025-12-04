@@ -1,24 +1,33 @@
-FROM node:18
+# Use official Node.js LTS image
+FROM node:18-slim
 
-# Install chromaprint for acoustic fingerprinting
+# Install system dependencies for chromaprint (fpcalc) and ffmpeg
 RUN apt-get update && \
-    apt-get install -y chromaprint-tools && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+    libchromaprint-tools \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
+# Verify fpcalc installation
+RUN which fpcalc && fpcalc -version
+
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --production
 
-# Copy source code
+# Copy application files
 COPY . .
 
 # Build TypeScript
 RUN npm run build
 
-EXPOSE 5000
+# Expose port (Render will override this)
+EXPOSE 3001
 
+# Start the application
 CMD ["npm", "start"]
