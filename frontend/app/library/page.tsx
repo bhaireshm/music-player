@@ -6,7 +6,6 @@ import { getSongs, Song } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { notifications } from '@mantine/notifications';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
-import UploadModal from '@/components/UploadModal';
 import { BulkUploadModal } from '@/components/BulkUploadModal';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
 import {
@@ -92,7 +91,6 @@ function LibraryPageContent() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [displayCount, setDisplayCount] = useState(20);
@@ -204,7 +202,6 @@ function LibraryPageContent() {
    */
   const handleUploadSuccess = () => {
     fetchSongs();
-    setShowUploadModal(false);
   };
 
   /**
@@ -352,32 +349,15 @@ function LibraryPageContent() {
                 </Button>
               )}
               {canUpload && (
-                <Menu shadow="md" width={200}>
-                  <Menu.Target>
-                    <Button
-                      leftSection={<IconUpload size={18} />}
-                      variant="gradient"
-                      gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
-                      size="md"
-                    >
-                      Upload
-                    </Button>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item
-                      leftSection={<IconUpload size={16} />}
-                      onClick={() => setShowUploadModal(true)}
-                    >
-                      Single Upload
-                    </Menu.Item>
-                    <Menu.Item
-                      leftSection={<IconUpload size={16} />}
-                      onClick={() => setShowBulkUploadModal(true)}
-                    >
-                      Bulk Upload
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                <Button
+                  leftSection={<IconUpload size={18} />}
+                  onClick={() => setShowBulkUploadModal(true)}
+                  variant="gradient"
+                  gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
+                  size="md"
+                >
+                  Upload Songs
+                </Button>
               )}
             </Group>
           </Group>
@@ -441,7 +421,7 @@ function LibraryPageContent() {
               {canUpload && (
                 <Button
                   leftSection={<IconUpload size={18} />}
-                  onClick={() => setShowUploadModal(true)}
+                  onClick={() => setShowBulkUploadModal(true)}
                   variant="gradient"
                   gradient={{ from: 'accent2.6', to: 'accent2.7', deg: 135 }}
                   size="md"
@@ -747,13 +727,6 @@ function LibraryPageContent() {
           </InfiniteScroll>
         )}
       </Container>
-
-      {/* Upload Modal */}
-      <UploadModal
-        opened={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
-        onUploadSuccess={handleUploadSuccess}
-      />
 
       {/* Bulk Upload Modal */}
       <BulkUploadModal

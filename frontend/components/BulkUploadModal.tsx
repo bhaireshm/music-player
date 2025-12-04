@@ -48,7 +48,7 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
     const unsubscribe = queueManager.subscribe((state) => {
       setFiles(state.files);
       setIsPaused(state.isPaused);
-      
+
       // Save state to localStorage
       saveUploadState(state.files);
     });
@@ -103,7 +103,7 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
 
     while (true) {
       const nextFile = queueManager.getNextFile();
-      
+
       if (!nextFile) {
         // Check if we're done
         if (queueManager.isComplete()) {
@@ -147,12 +147,11 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
     const stats = queueManager.getStats();
     if (stats.complete > 0 || stats.failed > 0) {
       const successRate = ((stats.complete / stats.total) * 100).toFixed(0);
-      
+
       notifications.show({
         title: 'Upload Complete',
-        message: `${stats.complete} of ${stats.total} files uploaded successfully (${successRate}%)${
-          stats.failed > 0 ? `\n${stats.failed} failed - click retry to try again` : ''
-        }`,
+        message: `${stats.complete} of ${stats.total} files uploaded successfully (${successRate}%)${stats.failed > 0 ? `\n${stats.failed} failed - click retry to try again` : ''
+          }`,
         color: stats.failed > 0 ? 'yellow' : 'green',
         icon: <IconCheck size={18} />,
         autoClose: stats.failed > 0 ? false : 5000,
@@ -176,6 +175,14 @@ export function BulkUploadModal({ opened, onClose, onComplete }: BulkUploadModal
     if (files.length === 0) return;
     processQueue();
   }, [files.length, processQueue]);
+
+  // Auto-start upload when files are added
+  useEffect(() => {
+    const stats = queueManager.getStats();
+    if (stats.pending > 0 && !isUploading && !uploadingRef.current) {
+      processQueue();
+    }
+  }, [files.length, queueManager, isUploading, processQueue]);
 
   // Pause/Resume
   const handlePauseResume = useCallback(() => {

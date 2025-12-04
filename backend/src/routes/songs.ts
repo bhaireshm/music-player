@@ -45,6 +45,7 @@ router.post('/upload', verifyToken, upload.single('file'), uploadSong);
 router.get('/ai-metadata-status', verifyToken, getAIMetadataStatus);
 
 import { enrichSongMetadata, aiEnhancedMetadataCleanup, batchMetadataCleanup } from '../controllers/metadataEnrichmentController';
+import { regenerateFingerprints } from '../controllers/fingerprintRegenerationController';
 
 // ... existing imports ...
 
@@ -53,6 +54,9 @@ router.post('/process-ai-metadata', verifyToken, processAIMetadata);
 
 // POST /songs/batch-cleanup - Batch metadata cleanup for multiple songs (MUST be before /:id routes)
 router.post('/batch-cleanup', verifyToken, batchMetadataCleanup);
+
+// POST /songs/regenerate-fingerprints - Regenerate acoustic fingerprints for hash-based songs
+router.post('/regenerate-fingerprints', verifyToken, regenerateFingerprints);
 
 // POST /songs/:id/enrich - Enrich song metadata from online sources
 router.post('/:id/enrich', verifyToken, enrichSongMetadata);

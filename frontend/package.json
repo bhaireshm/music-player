@@ -17,6 +17,7 @@
     "@mantine/notifications": "^8.3.7",
     "@tabler/icons-react": "^3.35.0",
     "firebase": "^12.5.0",
+    "framer-motion": "^12.23.25",
     "next": "16.0.1",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
@@ -27,7 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "baseline-browser-mapping": "^2.8.32",
+    "baseline-browser-mapping": "^2.9.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "typescript": "^5"

@@ -145,7 +145,7 @@ export function UploadProgressItem({
 
         {/* Actions */}
         <Group gap="xs">
-          {file.status === 'pending' && (
+          {(file.status === 'pending' || file.status === 'failed') && (
             <ActionIcon
               variant="subtle"
               color="blue"
