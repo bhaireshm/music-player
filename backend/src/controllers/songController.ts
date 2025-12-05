@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { generateFingerprint, checkDuplicate, FingerprintResult } from '../services/fingerprintService';
+import { generateFingerprint, FingerprintResult } from '../services/duplicateService';
 import { uploadFile, getFile, fileExists } from '../services/storageService';
 import { Song } from '../models/Song';
 import { randomUUID } from 'crypto';
@@ -9,7 +9,7 @@ import { r2Client, bucketName } from '../config/storage';
 import { extractMetadata, AudioMetadata } from '../services/metadataService';
 import { parseArtists } from '../utils/artistParser';
 import { cleanMetadata } from '../utils/metadataCleaner';
-import { searchMusicBrainz } from '../services/metadataEnrichmentService';
+import { enrichMetadata } from '../services/metadataEnrichmentService';
 
 /**
  * Merge extracted metadata with user-provided metadata
@@ -65,9 +65,26 @@ export async function uploadSong(
     const mimeType = req.file.mimetype;
     const filename = req.file.originalname;
 
-    // Extract metadata from audio file
+    // 1. EXTRACT: Get basic metadata from ID3 tags
     console.log('Extracting metadata from audio file...');
     const extractedMetadata = await extractMetadata(fileBuffer);
+
+    // 2. PARSE: Use filename parser as a fallback/second opinion
+    // If extracted title is numeric (Track 01) or missing, use filename parser
+    const { parseFilename } = await import('../utils/filenameParser');
+    const parsedFilename = parseFilename(filename);
+
+    // Heuristic: If extracted title looks like "Track 1" or is missing, use filename parsed title
+    const isBadTitle = !extractedMetadata.title || /^track\s*\d+$/i.test(extractedMetadata.title);
+    if (isBadTitle && parsedFilename.title) {
+      console.log(`Using filename parsed title: ${parsedFilename.title}`);
+      extractedMetadata.title = parsedFilename.title;
+    }
+    // Same for artist
+    if ((!extractedMetadata.artist || extractedMetadata.artist === 'Unknown Artist') && parsedFilename.artist) {
+      console.log(`Using filename parsed artist: ${parsedFilename.artist}`);
+      extractedMetadata.artist = parsedFilename.artist;
+    }
 
     // Extract user-provided metadata from request body
     const { title, artist, album, year, genre } = req.body;
@@ -79,35 +96,43 @@ export async function uploadSong(
       genre: genre ? (Array.isArray(genre) ? genre : [genre]) : undefined,
     };
 
-    // Merge extracted and user-provided metadata
+    // 3. MERGE: Combine extracted and user metadata
+    // User > Filename/Parsed > ID3
     let mergedMetadata = mergeMetadata(extractedMetadata, userProvidedMetadata, filename);
 
-    // Clean metadata (remove URLs, domain names, etc.)
+    // Clean metadata (remove URLs, etc.)
     mergedMetadata = cleanMetadata(mergedMetadata);
 
-    // If artist is unknown or missing, try to fetch from MusicBrainz
-    if (!mergedMetadata.artist || mergedMetadata.artist === 'Unknown Artist') {
-      console.log('Metadata incomplete, attempting to fetch from MusicBrainz...');
-      // Only search if we have a title
-      const searchTitle = mergedMetadata.title || filename.replace(/\.[^/.]+$/, '');
-      const searchArtist = mergedMetadata.artist !== 'Unknown Artist' ? mergedMetadata.artist : '';
+    // 4. ENRICH: Fetch from MusicBrainz / iTunes 
+    // We do this BEFORE duplicate check to ensure we match against canonical metadata
+    // Only enrich if we have at least a Title + Artist
+    if (mergedMetadata.title && mergedMetadata.artist && mergedMetadata.artist !== 'Unknown Artist') {
+      console.log('Enriching metadata via APIs...');
+      try {
+        const enriched = await enrichMetadata(mergedMetadata.title, mergedMetadata.artist);
+        if (enriched) {
+          console.log('Enrichment successful');
+          // Overwrite with enriched data if missing or if enriched looks "better"
+          // We trust API for Album, Year, Genre, and Cover Art
+          mergedMetadata.album = enriched.album || mergedMetadata.album;
+          mergedMetadata.year = enriched.year ? parseInt(enriched.year, 10) : mergedMetadata.year;
 
-      const mbMetadata = await searchMusicBrainz(searchTitle, searchArtist);
+          if (enriched.genres && enriched.genres.length > 0) {
+            // Merge genres
+            const existingGenres = mergedMetadata.genre || [];
+            mergedMetadata.genre = [...new Set([...existingGenres, ...enriched.genres])];
+          }
 
-      if (mbMetadata) {
-        console.log('Found metadata from MusicBrainz:', mbMetadata);
-        mergedMetadata = {
-          ...mergedMetadata,
-          title: mbMetadata.title || mergedMetadata.title,
-          artist: mbMetadata.artist || mergedMetadata.artist,
-          album: mbMetadata.album || mergedMetadata.album,
-          year: mbMetadata.year ? parseInt(mbMetadata.year, 10) : mergedMetadata.year,
-          genre: mbMetadata.genres || mergedMetadata.genre
-        };
+          // Use official casing for Title/Artist if provided
+          if (enriched.title) mergedMetadata.title = enriched.title;
+          if (enriched.artist) mergedMetadata.artist = enriched.artist;
+        }
+      } catch (enrichError) {
+        console.warn('Enrichment failed, continuing with local metadata', enrichError);
       }
     }
 
-    // Validate that title and artist are present after merging
+    // Validate that title and artist are present after all attempts
     if (!mergedMetadata.title || !mergedMetadata.artist) {
       res.status(400).json({
         error: {
@@ -118,13 +143,23 @@ export async function uploadSong(
       return;
     }
 
+    // 5. DUPLICATE CHECK
     // Generate audio fingerprint
     console.log('Generating fingerprint for uploaded audio...');
     const fingerprintResult: FingerprintResult = await generateFingerprint(fileBuffer);
-    console.log(`Fingerprint generated using ${fingerprintResult.method} method:`, fingerprintResult.fingerprint);
+    console.log(`Fingerprint generated using ${fingerprintResult.method} method`);
 
-    // Check for duplicate fingerprint
-    const duplicate = await checkDuplicate(fingerprintResult.fingerprint);
+    // Check for duplicate (Exact Fingerprint OR Fuzzy Metadata)
+    const { checkDuplicate: checkDuplicateService } = await import('../services/duplicateService');
+    const duplicate = await checkDuplicateService(
+      fingerprintResult.fingerprint,
+      {
+        title: mergedMetadata.title,
+        artist: mergedMetadata.artist,
+        duration: extractedMetadata.duration
+      }
+    );
+
     if (duplicate) {
       // Check if the file still exists in R2
       const fileStillExists = await fileExists(duplicate.fileKey);
@@ -143,21 +178,12 @@ export async function uploadSong(
           artist: mergedMetadata.artist,
         };
 
-        if (mergedMetadata.album) {
-          r2Metadata.album = mergedMetadata.album;
-        }
-        if (mergedMetadata.year) {
-          r2Metadata.year = mergedMetadata.year.toString();
-        }
-        if (mergedMetadata.genre && mergedMetadata.genre.length > 0) {
-          r2Metadata.genre = mergedMetadata.genre.join(', ');
-        }
-        if (extractedMetadata.duration) {
-          r2Metadata.duration = extractedMetadata.duration.toString();
-        }
+        if (mergedMetadata.album) r2Metadata.album = mergedMetadata.album;
+        if (mergedMetadata.year) r2Metadata.year = mergedMetadata.year.toString();
+        if (mergedMetadata.genre && mergedMetadata.genre.length > 0) r2Metadata.genre = mergedMetadata.genre.join(', ');
+        if (extractedMetadata.duration) r2Metadata.duration = extractedMetadata.duration.toString();
 
         // Upload file to R2
-        console.log('Uploading file to R2...');
         await uploadFile(fileBuffer, fileKey, mimeType, r2Metadata);
 
         // Parse multiple artists
@@ -173,6 +199,7 @@ export async function uploadSong(
         duplicate.duration = extractedMetadata.duration;
         duplicate.fileKey = fileKey;
         duplicate.mimeType = mimeType;
+        duplicate.fingerprint = fingerprintResult.fingerprint; // Update fingerprint in case it changed
 
         await duplicate.save();
         console.log('Existing song record updated with new file and metadata');
@@ -183,9 +210,6 @@ export async function uploadSong(
             title: duplicate.title,
             artist: duplicate.artist,
             album: duplicate.album,
-            year: duplicate.year,
-            genre: duplicate.genre,
-            mimeType: duplicate.mimeType,
             createdAt: duplicate.createdAt,
           },
           metadata: {
@@ -197,68 +221,30 @@ export async function uploadSong(
         return;
       }
 
-      // Check if metadata has changed
-      const metadataChanged =
-        duplicate.title !== mergedMetadata.title ||
-        duplicate.artist !== mergedMetadata.artist ||
-        duplicate.album !== mergedMetadata.album ||
-        duplicate.year !== mergedMetadata.year ||
-        JSON.stringify(duplicate.genre) !== JSON.stringify(mergedMetadata.genre);
+      // Check if metadata has changed significantly (simple exact check for now, upgrade logic if needed)
+      // For now, if it's a duplicate, we reject it unless the user explicitly wants to "replace" (not handled here)
+      // But we can update the metadata if the new one is "better" (e.g. enriched)
 
-      if (metadataChanged) {
-        // Update metadata only
-        console.log('Duplicate found with different metadata, updating...');
-        const artistsArray = parseArtists(mergedMetadata.artist);
-        duplicate.title = mergedMetadata.title;
-        duplicate.artist = mergedMetadata.artist;
-        duplicate.artists = artistsArray;
-        duplicate.album = mergedMetadata.album;
-        duplicate.year = mergedMetadata.year?.toString();
-        duplicate.genre = mergedMetadata.genre?.join(', ');
-
-        await duplicate.save();
-        console.log('Song metadata updated');
-
-        res.status(200).json({
-          song: {
-            id: duplicate._id,
-            title: duplicate.title,
-            artist: duplicate.artist,
-            album: duplicate.album,
-            year: duplicate.year,
-            genre: duplicate.genre,
-            mimeType: duplicate.mimeType,
-            createdAt: duplicate.createdAt,
-          },
-          metadata: {
-            extracted: extractedMetadata,
-            merged: mergedMetadata,
-          },
-          updated: true,
-        });
-        return;
-      }
-
-      // Exact duplicate - file exists and metadata is the same
+      // Let's just return Conflict for now as per requirement "Ensure no duplicates"
       res.status(409).json({
         error: {
           code: 'DUPLICATE_SONG',
-          message: 'This song already exists in the library with the same metadata',
+          message: 'This song already exists in the library',
           details: {
             existingSong: {
               id: duplicate._id,
               title: duplicate.title,
               artist: duplicate.artist,
               album: duplicate.album,
-              year: duplicate.year,
-              genre: duplicate.genre,
             },
+            matchType: duplicate.fingerprint === fingerprintResult.fingerprint ? 'Exact Audio' : 'Similar Metadata'
           },
         },
       });
       return;
     }
 
+    // 6. UPLOAD & SAVE
     // Generate unique file key for R2 storage
     const fileExtension = filename.split('.').pop() || 'mp3';
     const fileKey = `songs/${randomUUID()}.${fileExtension}`;
@@ -268,26 +254,15 @@ export async function uploadSong(
       title: mergedMetadata.title,
       artist: mergedMetadata.artist,
     };
-
-    if (mergedMetadata.album) {
-      r2Metadata.album = mergedMetadata.album;
-    }
-    if (mergedMetadata.year) {
-      r2Metadata.year = mergedMetadata.year.toString();
-    }
-    if (mergedMetadata.genre && mergedMetadata.genre.length > 0) {
-      r2Metadata.genre = mergedMetadata.genre.join(', ');
-    }
-    if (extractedMetadata.duration) {
-      r2Metadata.duration = extractedMetadata.duration.toString();
-    }
+    if (mergedMetadata.album) r2Metadata.album = mergedMetadata.album;
+    if (mergedMetadata.year) r2Metadata.year = mergedMetadata.year.toString();
 
     // Upload file to R2 with custom metadata
     console.log('Uploading file to R2...');
     await uploadFile(fileBuffer, fileKey, mimeType, r2Metadata);
     console.log('File uploaded successfully');
 
-    // Parse multiple artists from the artist string
+    // Parse multiple artists
     const artistsArray = parseArtists(mergedMetadata.artist);
 
     // Save song metadata to database
@@ -312,7 +287,7 @@ export async function uploadSong(
     await song.save();
     console.log('Song metadata saved to database');
 
-    // Return created song object with extracted/merged metadata
+    // Return created song object
     res.status(201).json({
       song: {
         id: song._id,
@@ -322,7 +297,6 @@ export async function uploadSong(
         year: song.year,
         genre: song.genre,
         duration: song.duration,
-        mimeType: song.mimeType,
         uploadedBy: song.uploadedBy,
         createdAt: song.createdAt,
       },

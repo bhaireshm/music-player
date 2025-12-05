@@ -23,6 +23,15 @@ export interface UploadQueueState {
   isPaused: boolean;
 }
 
+export interface UploadQueueStats {
+  total: number;
+  pending: number;
+  uploading: number;
+  complete: number;
+  failed: number;
+  paused: number;
+}
+
 export class UploadQueueManager {
   private state: UploadQueueState;
   private listeners: Set<(state: UploadQueueState) => void>;
@@ -191,14 +200,10 @@ export class UploadQueueManager {
   /**
    * Get upload statistics
    */
-  getStats(): {
-    total: number;
-    pending: number;
-    uploading: number;
-    complete: number;
-    failed: number;
-    paused: number;
-  } {
+  /**
+   * Get upload statistics
+   */
+  getStats(): UploadQueueStats {
     return {
       total: this.state.files.length,
       pending: this.state.files.filter((f) => f.status === 'pending').length,

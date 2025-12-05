@@ -6,7 +6,6 @@ import { getSongs, Song } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { notifications } from '@mantine/notifications';
 import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext';
-import { BulkUploadModal } from '@/components/BulkUploadModal';
 import AddToPlaylistMenu from '@/components/AddToPlaylistMenu';
 import {
   Container,
@@ -93,7 +92,6 @@ function LibraryPageContent() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [displayCount, setDisplayCount] = useState(20);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -206,13 +204,6 @@ function LibraryPageContent() {
     if (filteredSongs.length === 0) return;
     const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
     setQueue(shuffled, 0);
-  };
-
-  /**
-   * Handle successful upload - refresh the song list
-   */
-  const handleUploadSuccess = () => {
-    fetchSongs();
   };
 
   /**
@@ -376,7 +367,7 @@ function LibraryPageContent() {
               {canUpload && (
                 <Button
                   leftSection={<IconUpload size={18} />}
-                  onClick={() => setShowBulkUploadModal(true)}
+                  onClick={() => router.push('/upload')}
                   variant="gradient"
                   gradient={{ from: 'accent1.7', to: 'secondary.7', deg: 135 }}
                   size="md"
@@ -446,7 +437,7 @@ function LibraryPageContent() {
               {canUpload && (
                 <Button
                   leftSection={<IconUpload size={18} />}
-                  onClick={() => setShowBulkUploadModal(true)}
+                  onClick={() => router.push('/upload')}
                   variant="gradient"
                   gradient={{ from: 'accent2.6', to: 'accent2.7', deg: 135 }}
                   size="md"
@@ -752,13 +743,6 @@ function LibraryPageContent() {
           </InfiniteScroll>
         )}
       </Container>
-
-      {/* Bulk Upload Modal */}
-      <BulkUploadModal
-        opened={showBulkUploadModal}
-        onClose={() => setShowBulkUploadModal(false)}
-        onComplete={handleUploadSuccess}
-      />
     </Box>
   );
 }

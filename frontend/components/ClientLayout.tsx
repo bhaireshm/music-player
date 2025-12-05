@@ -12,6 +12,7 @@ import { SearchProvider } from '@/contexts/SearchContext';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import SearchOverlay from '@/components/SearchOverlay';
 import { GlobalKeyboardShortcuts } from '@/components/GlobalKeyboardShortcuts';
+import { UploadProvider } from '@/contexts/UploadContext';
 import AudioPlayer from '@/components/AudioPlayer';
 
 interface ClientLayoutProps {
@@ -80,7 +81,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       <FavoritesProvider>
         <SearchProvider>
           <GlobalAudioPlayerProvider>
-            <MainLayout>{children}</MainLayout>
+            <UploadProvider>
+              <MainLayout>{children}</MainLayout>
+            </UploadProvider>
           </GlobalAudioPlayerProvider>
         </SearchProvider>
       </FavoritesProvider>

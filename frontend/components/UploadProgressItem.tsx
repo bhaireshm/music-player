@@ -22,6 +22,8 @@ import {
 import { UploadFile } from '@/lib/upload/uploadQueue';
 import { formatFileSize, getFileExtension } from '@/lib/upload/fileValidation';
 
+import { ArtPlaceholder } from './ArtPlaceholder';
+
 interface UploadProgressItemProps {
   file: UploadFile;
   onRetry: () => void;
@@ -108,7 +110,8 @@ export function UploadProgressItem({
         backgroundColor: theme.colors.gray[0],
       })}
     >
-      <Group justify="space-between" wrap="nowrap">
+      <Group justify="space-between" wrap="nowrap" align="flex-start">
+        <ArtPlaceholder id={file.id} size={48} />
         <Box style={{ flex: 1, minWidth: 0 }}>
           {/* File Info */}
           <Group gap="xs" mb="xs">

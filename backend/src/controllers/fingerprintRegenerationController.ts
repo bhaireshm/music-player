@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { Song } from '../models/Song';
-import { generateFingerprint } from '../services/fingerprintService';
+import { generateFingerprint } from '../services/duplicateService';
 import { getFile } from '../services/storageService';
 import fs from 'fs';
 import path from 'path';

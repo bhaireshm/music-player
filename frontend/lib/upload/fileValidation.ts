@@ -103,23 +103,42 @@ export function validateFile(file: File): ValidationResult {
  * Attempts to parse common filename patterns like "Artist - Title.mp3"
  */
 export function extractMetadataFromFilename(filename: string): FileMetadata {
-  // Remove file extension
-  const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
+  // 1. Clean filename
+  // Remove extension
+  let name = filename.replace(/\.[^/.]+$/, "");
 
-  // Try to parse "Artist - Title" pattern
-  const dashPattern = /^(.+?)\s*-\s*(.+)$/;
-  const match = nameWithoutExt.match(dashPattern);
+  // Remove [320kbps], (Official Video), etc.
+  name = name.replace(/\[.*?\]|\(.*?\)/g, "").trim();
 
-  if (match) {
+  // Remove leading/trailing numbers if they look like track numbers (e.g. "01. Song", "01 - Song")
+  name = name.replace(/^\d+[\.\-\s]+/, "").trim();
+
+  // 2. Parse "Artist - Title" pattern
+  // distinct from just any hyphen, we look for " - " (space hyphen space) to be safer 
+  // or just "-" if we want to be more aggressive, but " - " is standard
+  const hyphenSplit = name.split(/\s+-\s+/);
+
+  if (hyphenSplit.length >= 2) {
+    // Artist is the first part, Title is the last part (handling "Artist - Album - Title")
+    let artist = hyphenSplit[0].trim();
+    const title = hyphenSplit[hyphenSplit.length - 1].trim();
+
+    // Heuristic: If artist looks like "Track 01", it's likely not an artist
+    if (/^track\s*\d+$/i.test(artist)) {
+      artist = 'Unknown Artist';
+    }
+
     return {
-      title: match[2].trim(),
-      artist: match[1].trim(),
+      title: title || name,
+      artist: artist || 'Unknown Artist',
+      album: hyphenSplit.length > 2 ? hyphenSplit[1].trim() : undefined
     };
   }
 
-  // Fallback: use filename as title
+  // Fallback: If no clear separator, check for just loose "-" but usually this is risky.
+  // Let's stick to the cleaner name as title.
   return {
-    title: nameWithoutExt.trim(),
+    title: name.trim(),
     artist: 'Unknown Artist',
   };
 }

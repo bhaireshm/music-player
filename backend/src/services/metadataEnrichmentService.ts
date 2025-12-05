@@ -34,6 +34,43 @@ interface EnrichedMetadata {
 const USER_AGENT = 'NaadaMusicPlayer/1.0.0 ( bhairesh@mailinator.com )'; // Required by MusicBrainz
 
 /**
+ * Search iTunes for song metadata (Fallback/Secondary Source)
+ * Often better for cover art and commercial pop/rock metadata
+ */
+async function searchITunes(title: string, artist: string): Promise<EnrichedMetadata | null> {
+    try {
+        const query = `${title} ${artist}`;
+        // entity=song, limit=1
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`;
+
+        const response = await axios.get(url);
+
+        if (!response.data.results || response.data.results.length === 0) {
+            return null;
+        }
+
+        const match = response.data.results[0];
+
+        // Format high-res artwork (default is 100x100)
+        const artwork = match.artworkUrl100
+            ? match.artworkUrl100.replace('100x100bb', '600x600bb')
+            : null;
+
+        return {
+            title: match.trackName,
+            artist: match.artistName,
+            album: match.collectionName,
+            year: match.releaseDate ? match.releaseDate.substring(0, 4) : undefined,
+            genres: match.primaryGenreName ? [match.primaryGenreName] : [],
+            coverArtUrl: artwork
+        };
+    } catch (error) {
+        console.warn('iTunes search failed:', error);
+        return null;
+    }
+}
+
+/**
  * Search MusicBrainz for song metadata
  */
 export async function searchMusicBrainz(title: string, artist: string): Promise<EnrichedMetadata | null> {
@@ -95,6 +132,38 @@ export async function searchMusicBrainz(title: string, artist: string): Promise<
         return null;
     }
 }
+
+/**
+ * Unified Metadata Search (Try MusicBrainz, then iTunes, then return best)
+ */
+export async function enrichMetadata(title: string, artist: string): Promise<EnrichedMetadata | null> {
+    // Parallel search for speed? Or sequential for kindness to APIs?
+    // Let's try MusicBrainz first (open data), then iTunes (commercial data) if MB fails or for Cover Art
+
+    // We can actually run them in parallel and merge
+    const [mbResult, itunesResult] = await Promise.all([
+        searchMusicBrainz(title, artist),
+        searchITunes(title, artist)
+    ]);
+
+    if (!mbResult && !itunesResult) return null;
+    if (!mbResult) return itunesResult;
+    if (!itunesResult) return mbResult;
+
+    // Merge strategy:
+    // - Use Title/Artist/Album from MusicBrainz (usually accurate to standard)
+    // - Use Cover Art from iTunes (usually higher res/better guaranteed)
+    // - Use Year from either (iTunes usually has reliable release dates)
+    // - Merge genres
+
+    return {
+        ...mbResult,
+        coverArtUrl: itunesResult.coverArtUrl || mbResult.coverArtUrl, // Prefer iTunes art
+        year: itunesResult.year || mbResult.year, // Prefer iTunes year (often more precise releasedate)
+        genres: [...new Set([...(mbResult.genres || []), ...(itunesResult.genres || [])])].slice(0, 5)
+    };
+}
+
 
 /**
  * Fetch cover art from Cover Art Archive
