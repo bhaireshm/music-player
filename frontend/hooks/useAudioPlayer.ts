@@ -357,11 +357,11 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   /**
    * Load a song into the audio player
    */
-  const loadSong = useCallback(async (song: Song) => {
+  const loadSong = useCallback(async (song: Song, options?: { startTime?: number }) => {
     if (!audioRef.current || !faderRef.current) return;
 
-    // Check if we should crossfade
-    const shouldCrossfade = crossfadeDuration > 0 && isPlaying && audioRef.current.src && !audioRef.current.paused;
+    // Check if we should crossfade (only if not forcing a start time, and we are playing)
+    const shouldCrossfade = !options?.startTime && crossfadeDuration > 0 && isPlaying && audioRef.current.src && !audioRef.current.paused;
 
     try {
       setLoading(true);
@@ -372,8 +372,10 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       const streamUrl = getSongStreamUrl(song.id);
       const authenticatedUrl = token ? `${streamUrl}?token=${token}` : streamUrl;
 
+      const startPosition = options?.startTime || 0;
+
       if (shouldCrossfade) {
-        // CROSSFADE LOGIC
+        // CROSSFADE LOGIC (unchanged for startPosition as crossfade usually implies new song)
 
         // 1. Swap refs: fader becomes the old main (playing), main becomes the new one (to be loaded)
         const oldMain = audioRef.current;
@@ -447,11 +449,11 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         // Load source
         newMain.src = authenticatedUrl;
         newMain.volume = 0; // Start silent
-        newMain.currentTime = 0; // Always start from beginning
+        newMain.currentTime = startPosition;
         newMain.load();
 
         // Reset time
-        setCurrentTime(0);
+        setCurrentTime(startPosition);
 
       } else {
         // STANDARD LOAD LOGIC (No Crossfade)
@@ -466,8 +468,17 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
         const handleCanPlayAutoPlay = () => {
           setLoading(false);
+
+          // If we have a start time, ensure we seek to it before playing logic kicks in fully
+          if (startPosition > 0 && audioRef.current) {
+            audioRef.current.currentTime = startPosition;
+            setCurrentTime(startPosition);
+          }
+
           audioRef.current?.play().catch((err) => {
             console.error('Auto-play error:', err);
+            // If autoplay fails, we just stop. User can try again.
+            // But since this is often triggered BY user action (if not crossfading), it usually works.
             setError('Failed to play audio');
             setIsPlaying(false);
             setLoading(false);
@@ -480,9 +491,9 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
         // Load source
         audioRef.current.src = authenticatedUrl;
-        audioRef.current.currentTime = 0; // Always start from beginning
+        audioRef.current.currentTime = startPosition;
         audioRef.current.load();
-        setCurrentTime(0);
+        setCurrentTime(startPosition);
       }
 
     } catch (err) {
@@ -494,16 +505,30 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
   const play = useCallback(() => {
     if (!audioRef.current || !currentSong) return;
-    if (!audioRef.current.src || audioRef.current.src === '') {
-      loadSong(currentSong);
+
+    // Check if source is missing or invalid
+    if (!audioRef.current.src || audioRef.current.src === '' || audioRef.current.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+      loadSong(currentSong, { startTime: currentTime });
       return;
     }
-    audioRef.current.play().catch((err) => {
-      console.error('Playback error:', err);
-      setError('Failed to play audio');
-      setIsPlaying(false);
-    });
-  }, [currentSong, loadSong]);
+
+    const playPromise = audioRef.current.play();
+
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.error('Playback error:', err);
+
+        // If the element has no supported sources or other "fatal" playback errors, try reloading
+        if (err.name === 'NotSupportedError' || err.message.includes('supported sources')) {
+          console.log('Recovering from playback error by reloading song...');
+          loadSong(currentSong, { startTime: currentTime });
+        } else {
+          setError('Failed to play audio');
+          setIsPlaying(false);
+        }
+      });
+    }
+  }, [currentSong, loadSong, currentTime]);
 
   const pause = useCallback(() => {
     if (!audioRef.current) return;
