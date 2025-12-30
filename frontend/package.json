@@ -22,7 +22,8 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/node": "^20",

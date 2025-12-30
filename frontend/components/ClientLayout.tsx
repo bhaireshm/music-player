@@ -14,6 +14,7 @@ import SearchOverlay from '@/components/SearchOverlay';
 import { GlobalKeyboardShortcuts } from '@/components/GlobalKeyboardShortcuts';
 import { UploadProvider } from '@/contexts/UploadContext';
 import AudioPlayer from '@/components/AudioPlayer';
+import { JukeboxProvider } from '@/context/JukeboxContext';
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -81,9 +82,11 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       <FavoritesProvider>
         <SearchProvider>
           <GlobalAudioPlayerProvider>
-            <UploadProvider>
-              <MainLayout>{children}</MainLayout>
-            </UploadProvider>
+            <JukeboxProvider>
+              <UploadProvider>
+                <MainLayout>{children}</MainLayout>
+              </UploadProvider>
+            </JukeboxProvider>
           </GlobalAudioPlayerProvider>
         </SearchProvider>
       </FavoritesProvider>

@@ -10,7 +10,8 @@ import {
     IconCloudOff,
     IconSettings,
     IconUser,
-    IconUpload
+    IconUpload,
+    IconDeviceSpeaker
 } from '@tabler/icons-react';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
         { icon: IconHeart, label: 'Favorites', path: '/favorites' },
         { icon: IconPlaylist, label: 'Playlists', path: '/playlists' },
         { icon: IconCompass, label: 'Discover', path: '/discover' },
+        { icon: IconDeviceSpeaker, label: 'Jukebox', path: '/jukebox' },
         { icon: IconUpload, label: 'Upload', path: '/upload' },
         { icon: IconCloudOff, label: 'Offline', path: '/offline' },
     ];

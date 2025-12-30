@@ -1,16 +1,19 @@
-import express, { Express } from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import express, { Express } from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import { connectDB } from './config/db';
-import songsRouter from './routes/songs';
-import playlistsRouter from './routes/playlists';
-import playlistSharingRouter from './routes/playlistSharing';
-import searchRouter from './routes/search';
-import favoritesRouter from './routes/favorites';
-import usersRouter from './routes/users';
-import artistsRouter from './routes/artists';
-import albumsRouter from './routes/albums';
+import { initializeJukeboxSockets } from './controllers/JukeboxController';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import albumsRouter from './routes/albums';
+import artistsRouter from './routes/artists';
+import favoritesRouter from './routes/favorites';
+import playlistSharingRouter from './routes/playlistSharing';
+import playlistsRouter from './routes/playlists';
+import searchRouter from './routes/search';
+import songsRouter from './routes/songs';
+import usersRouter from './routes/users';
 
 // Load environment variables
 dotenv.config();
@@ -64,7 +67,17 @@ app.use(errorHandler);
 // Connect to MongoDB and start server
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
+    const server = http.createServer(app);
+    const io = new Server(server, {
+      cors: {
+        origin: '*', // Allow all origins for dev, restrict in prod
+        methods: ['GET', 'POST'],
+      },
+    });
+
+    initializeJukeboxSockets(io);
+
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   })
