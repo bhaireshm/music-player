@@ -1,27 +1,23 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { 
-  Container, 
-  Paper, 
-  Title, 
-  Text, 
-  TextInput, 
-  PasswordInput, 
-  Button, 
-  Alert, 
-  Anchor, 
-  Stack, 
-  Box, 
+import {
+  Alert,
+  Anchor,
+  Button,
   Divider,
-  rgba
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
-import { useState, Suspense } from 'react';
-import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 function LoginForm() {
   const router = useRouter();
@@ -71,108 +67,67 @@ function LoginForm() {
   };
 
   return (
-    <Box
-      style={(theme) => ({
-        minHeight: '100vh',
-        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: theme.spacing.md,
-        pointerEvents: 'auto',
-        touchAction: 'manipulation',
-      })}
+    <AuthLayout
+      title="Welcome Back"
+      subtitle="Sign in to your music library"
     >
-      <Container size={420} w="100%" style={{ pointerEvents: 'auto' }}>
-        <Paper 
-          shadow="xl" 
-          p={30} 
-          radius="md"
-          style={(theme) => ({
-            background: rgba(theme.colors.primary[0], 0.95),
-            pointerEvents: 'auto',
-          })}
-        >
-          <Stack gap="md">
-            <div>
-              <Title 
-                order={1} 
-                ta="center" 
-                mb={8}
-                style={(theme) => ({
-                  backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.accent2[7]} 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                })}
-              >
-                Welcome Back
-              </Title>
-              <Text c="dimmed" size="sm" ta="center">
-                Sign in to your music library
-              </Text>
-            </div>
+      {error && (
+        <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
+          {error}
+        </Alert>
+      )}
 
-            {error && (
-              <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-                {error}
-              </Alert>
-            )}
+      <GoogleSignInButton
+        onClick={handleGoogleSignIn}
+        loading={googleLoading}
+        variant="signin"
+      />
 
-            <GoogleSignInButton
-              onClick={handleGoogleSignIn}
-              loading={googleLoading}
-              variant="signin"
-            />
+      <Divider label="OR" labelPosition="center" />
 
-            <Divider label="OR" labelPosition="center" />
+      <form onSubmit={form.onSubmit(handleSubmit)} style={{ pointerEvents: 'auto' }}>
+        <Stack gap="md" style={{ pointerEvents: 'auto' }}>
+          <TextInput
+            label="Email Address"
+            placeholder="you@example.com"
+            required
+            disabled={loading || googleLoading}
+            size="md"
+            styles={{ input: { pointerEvents: 'auto', touchAction: 'manipulation' } }}
+            {...form.getInputProps('email')}
+          />
 
-            <form onSubmit={form.onSubmit(handleSubmit)} style={{ pointerEvents: 'auto' }}>
-              <Stack gap="md" style={{ pointerEvents: 'auto' }}>
-                <TextInput
-                  label="Email Address"
-                  placeholder="you@example.com"
-                  required
-                  disabled={loading || googleLoading}
-                  size="md"
-                  styles={{ input: { pointerEvents: 'auto', touchAction: 'manipulation' } }}
-                  {...form.getInputProps('email')}
-                />
+          <PasswordInput
+            label="Password"
+            placeholder="••••••••"
+            required
+            disabled={loading || googleLoading}
+            size="md"
+            styles={{ input: { pointerEvents: 'auto', touchAction: 'manipulation' } }}
+            {...form.getInputProps('password')}
+          />
 
-                <PasswordInput
-                  label="Password"
-                  placeholder="••••••••"
-                  required
-                  disabled={loading || googleLoading}
-                  size="md"
-                  styles={{ input: { pointerEvents: 'auto', touchAction: 'manipulation' } }}
-                  {...form.getInputProps('password')}
-                />
+          <Button
+            type="submit"
+            fullWidth
+            loading={loading}
+            disabled={googleLoading}
+            variant="gradient"
+            gradient={{ from: 'accent1.7', to: 'accent2.7', deg: 135 }}
+            style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
+          >
+            Sign In
+          </Button>
+        </Stack>
+      </form>
 
-                <Button
-                  type="submit"
-                  fullWidth
-                  loading={loading}
-                  disabled={googleLoading}
-                  variant="gradient"
-                  gradient={{ from: 'accent1.7', to: 'accent2.7', deg: 135 }}
-                  style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
-                >
-                  Sign In
-                </Button>
-              </Stack>
-            </form>
-
-            <Text c="dimmed" size="sm" ta="center">
-              Don&apos;t have an account?{' '}
-              <Anchor component={Link} href="/register" size="sm" c="accent1.7">
-                Sign up
-              </Anchor>
-            </Text>
-          </Stack>
-        </Paper>
-      </Container>
-    </Box>
+      <Text c="dimmed" size="sm" ta="center">
+        Don&apos;t have an account?{' '}
+        <Anchor component={Link} href="/register" size="sm" c="accent1.7">
+          Sign up
+        </Anchor>
+      </Text>
+    </AuthLayout>
   );
 }
 
