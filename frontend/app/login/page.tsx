@@ -1,16 +1,30 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useAuth } from '@/hooks/useAuth';
-import { Container, Paper, Title, Text, TextInput, PasswordInput, Button, Alert, Anchor, Stack, Box, Divider } from '@mantine/core';
+import { signInWithGoogle } from '@/lib/firebase';
+import {
+  Alert,
+  Anchor,
+  Box,
+  Button,
+  Container,
+  Divider,
+  Paper,
+  PasswordInput,
+  rgba,
+  Stack,
+  Text,
+  TextInput,
+  Title
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { GoogleSignInButton } from '@/components/GoogleSignInButton';
-import { signInWithGoogle } from '@/lib/firebase';
 
-export default function LoginPage() {
+export default function LoginPage(): React.ReactElement {
   const router = useRouter();
   const { signIn, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -58,30 +72,30 @@ export default function LoginPage() {
     <Box
       style={(theme) => ({
         minHeight: '100vh',
-        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100())`,
+        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'var(--mantine-spacing-md)',
+        padding: theme.spacing.md,
         pointerEvents: 'auto',
         touchAction: 'manipulation',
       })}
     >
       <Container size={420} w="100%" style={{ pointerEvents: 'auto' }}>
-        <Paper 
-          shadow="xl" 
-          p={30} 
+        <Paper
+          shadow="xl"
+          p={30}
           radius="md"
           style={(theme) => ({
-            background: `rgba(${parseInt(theme.colors.primary[0].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[0].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[0].slice(5, 7), 16)}, 0.95)`,
+            background: rgba(theme.colors.primary[0], 0.95),
             pointerEvents: 'auto',
           })}
         >
           <Stack gap="md">
             <div>
-              <Title 
-                order={1} 
-                ta="center" 
+              <Title
+                order={1}
+                ta="center"
                 mb={8}
                 style={(theme) => ({
                   backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.accent2[7]} 100%)`,

@@ -3,7 +3,21 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { Container, Paper, Title, Text, TextInput, PasswordInput, Button, Alert, Anchor, Stack, Box, Divider } from '@mantine/core';
+import { 
+  Container, 
+  Paper, 
+  Title, 
+  Text, 
+  TextInput, 
+  PasswordInput, 
+  Button, 
+  Alert, 
+  Anchor, 
+  Stack, 
+  Box, 
+  Divider,
+  rgba
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useState } from 'react';
@@ -11,7 +25,7 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { signUpWithGoogle } from '@/lib/firebase';
 import { getUserProfile } from '@/lib/api';
 
-export default function RegisterPage() {
+export default function RegisterPage(): React.ReactElement {
   const router = useRouter();
   const { signUp, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -72,11 +86,11 @@ export default function RegisterPage() {
     <Box
       style={(theme) => ({
         minHeight: '100vh',
-        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100())`,
+        background: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.secondary[7]} 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'var(--mantine-spacing-md)',
+        padding: theme.spacing.md,
         pointerEvents: 'auto',
         touchAction: 'manipulation',
       })}
@@ -87,7 +101,7 @@ export default function RegisterPage() {
           p={30} 
           radius="md"
           style={(theme) => ({
-            background: `rgba(${parseInt(theme.colors.primary[0].slice(1, 3), 16)}, ${parseInt(theme.colors.primary[0].slice(3, 5), 16)}, ${parseInt(theme.colors.primary[0].slice(5, 7), 16)}, 0.95)`,
+            background: rgba(theme.colors.primary[0], 0.95),
             pointerEvents: 'auto',
           })}
         >
