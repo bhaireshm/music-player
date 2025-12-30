@@ -1,34 +1,36 @@
 'use client';
 
-import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { signInWithGoogle } from '@/lib/firebase';
-import {
-  Alert,
-  Anchor,
-  Box,
-  Button,
-  Container,
+import { 
+  Container, 
+  Paper, 
+  Title, 
+  Text, 
+  TextInput, 
+  PasswordInput, 
+  Button, 
+  Alert, 
+  Anchor, 
+  Stack, 
+  Box, 
   Divider,
-  Paper,
-  PasswordInput,
-  rgba,
-  Stack,
-  Text,
-  TextInput,
-  Title
+  rgba
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
-export default function LoginPage(): React.ReactElement {
+function LoginForm() {
   const router = useRouter();
-  const { signIn, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const { signIn, signInWithGoogle, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const redirectUrl = searchParams.get('redirect') || '/library';
 
   const form = useForm({
     initialValues: {
@@ -46,7 +48,7 @@ export default function LoginPage(): React.ReactElement {
 
     try {
       await signIn(values.email, values.password);
-      router.push('/library');
+      router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
       setError(errorMessage);
@@ -59,7 +61,7 @@ export default function LoginPage(): React.ReactElement {
 
     try {
       await signInWithGoogle();
-      router.push('/library');
+      router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
       setError(errorMessage);
@@ -82,9 +84,9 @@ export default function LoginPage(): React.ReactElement {
       })}
     >
       <Container size={420} w="100%" style={{ pointerEvents: 'auto' }}>
-        <Paper
-          shadow="xl"
-          p={30}
+        <Paper 
+          shadow="xl" 
+          p={30} 
           radius="md"
           style={(theme) => ({
             background: rgba(theme.colors.primary[0], 0.95),
@@ -93,9 +95,9 @@ export default function LoginPage(): React.ReactElement {
         >
           <Stack gap="md">
             <div>
-              <Title
-                order={1}
-                ta="center"
+              <Title 
+                order={1} 
+                ta="center" 
                 mb={8}
                 style={(theme) => ({
                   backgroundImage: `linear-gradient(135deg, ${theme.colors.accent1[8]} 0%, ${theme.colors.accent2[7]} 100%)`,
@@ -171,5 +173,13 @@ export default function LoginPage(): React.ReactElement {
         </Paper>
       </Container>
     </Box>
+  );
+}
+
+export default function LoginPage(): React.ReactElement {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -44,10 +44,10 @@ if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
 
 // Initialize Firebase app (only once)
 let app: FirebaseApp;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
+if (getApps().length) {
   app = getApps()[0];
+} else {
+  app = initializeApp(firebaseConfig);
 }
 
 // Initialize Firebase Authentication
@@ -117,7 +117,7 @@ export const signUpWithGoogle = signInWithGoogle;
 export const linkGoogleAccountToCurrentUser = async (): Promise<UserCredential> => {
   try {
     const currentUser = auth.currentUser;
-    
+
     if (!currentUser) {
       throw new Error('No user is currently signed in');
     }

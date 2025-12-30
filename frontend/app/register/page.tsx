@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -20,16 +20,17 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
-import { signUpWithGoogle } from '@/lib/firebase';
-import { getUserProfile } from '@/lib/api';
 
-export default function RegisterPage(): React.ReactElement {
+function RegisterForm() {
   const router = useRouter();
-  const { signUp, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const { signUp, signInWithGoogle, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const redirectUrl = searchParams.get('redirect') || '/library';
 
   const form = useForm({
     initialValues: {
@@ -50,7 +51,7 @@ export default function RegisterPage(): React.ReactElement {
 
     try {
       await signUp(values.email, values.password);
-      router.push('/library');
+      router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign up';
       setError(errorMessage);
@@ -62,18 +63,9 @@ export default function RegisterPage(): React.ReactElement {
     setGoogleLoading(true);
 
     try {
-      await signUpWithGoogle();
-      
-      // Try to get/create user profile on backend
-      try {
-        await getUserProfile();
-      } catch {
-        // Profile might not exist yet, that's okay
-        console.log('Profile will be created on first API call');
-      }
-
-      // Redirect to library
-      router.push('/library');
+      // useAuth.signInWithGoogle handles both sign-in and sign-up with sync
+      await signInWithGoogle();
+      router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign up with Google';
       setError(errorMessage);
@@ -195,5 +187,13 @@ export default function RegisterPage(): React.ReactElement {
         </Paper>
       </Container>
     </Box>
+  );
+}
+
+export default function RegisterPage(): React.ReactElement {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

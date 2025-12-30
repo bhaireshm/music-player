@@ -1,6 +1,13 @@
-import { useState, useEffect } from 'react';
+import { getUserProfile } from '@/lib/api';
+import {
+  auth,
+  signIn as firebaseSignIn,
+  signInWithGoogle as firebaseSignInWithGoogle,
+  signOut as firebaseSignOut,
+  signUp as firebaseSignUp
+} from '@/lib/firebase';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth, signUp as firebaseSignUp, signIn as firebaseSignIn, signOut as firebaseSignOut } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
 
 interface AuthState {
   user: User | null;
@@ -11,6 +18,7 @@ interface AuthState {
 interface AuthActions {
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -47,6 +55,20 @@ export function useAuth(): UseAuthReturn {
   }, []);
 
   /**
+   * Sync the Firebase user with the backend database
+   */
+  const syncUserWithBackend = async () => {
+    try {
+      // This call triggers the backend middleware to create/update the user
+      await getUserProfile();
+    } catch (err) {
+      console.error('Failed to sync user with backend:', err);
+      // We don't throw here to allow the auth flow to continue, 
+      // but we log it. The user might face issues later if the backend record isn't created.
+    }
+  };
+
+  /**
    * Sign up a new user with email and password
    * 
    * @param {string} email - User's email address
@@ -58,11 +80,11 @@ export function useAuth(): UseAuthReturn {
       setError(null);
       setLoading(true);
       await firebaseSignUp(email, password);
-      // User state will be updated by onAuthStateChanged
+      await syncUserWithBackend();
     } catch (err: unknown) {
       let errorMessage = 'Failed to sign up';
       const error = err as { code?: string; message?: string };
-      
+
       // Handle Firebase-specific error codes
       if (error.code) {
         switch (error.code) {
@@ -84,7 +106,7 @@ export function useAuth(): UseAuthReturn {
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
-      
+
       console.error('Sign up error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -105,11 +127,11 @@ export function useAuth(): UseAuthReturn {
       setError(null);
       setLoading(true);
       await firebaseSignIn(email, password);
-      // User state will be updated by onAuthStateChanged
+      await syncUserWithBackend();
     } catch (err: unknown) {
       let errorMessage = 'Failed to sign in';
       const error = err as { code?: string; message?: string };
-      
+
       // Handle Firebase-specific error codes
       if (error.code) {
         switch (error.code) {
@@ -137,8 +159,36 @@ export function useAuth(): UseAuthReturn {
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
-      
+
       console.error('Sign in error:', err);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Sign in with Google
+   */
+  const signInWithGoogle = async (): Promise<void> => {
+    try {
+      setError(null);
+      setLoading(true);
+      await firebaseSignInWithGoogle();
+      await syncUserWithBackend();
+    } catch (err: unknown) {
+      let errorMessage = 'Failed to sign in with Google';
+      const error = err as { code?: string; message?: string };
+
+      if (error.code) {
+        // Add Google specific error handling if needed
+        errorMessage = error.message || errorMessage;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      console.error('Google sign in error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -172,6 +222,7 @@ export function useAuth(): UseAuthReturn {
     error,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   };
 }
