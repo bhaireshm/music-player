@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth'
 import { theme1Dark } from "@/lib/theme"
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LoginPage from './page'
 
@@ -50,45 +50,45 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument()
   })
 
-  // it('handles email/password submission', async () => {
-  //   renderWithMantine(<LoginPage />)
+  it('handles email/password submission', async () => {
+    renderWithMantine(<LoginPage />)
 
-  //   fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } })
-  //   fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'password123' } })
 
-  //   fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
 
-  //   await waitFor(() => {
-  //     expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123')
-  //   })
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123')
+    })
 
-  //   expect(mockPush).toHaveBeenCalledWith('/library')
-  // })
+    expect(mockPush).toHaveBeenCalledWith('/library')
+  })
 
-  // it('handles google sign in', async () => {
-  //   renderWithMantine(<LoginPage />)
+  it('handles google sign in', async () => {
+    renderWithMantine(<LoginPage />)
 
-  //   fireEvent.click(screen.getByRole('button', { name: /sign in with google/i }))
+    fireEvent.click(screen.getByRole('button', { name: /sign in with google/i }))
 
-  //   await waitFor(() => {
-  //     expect(mockSignInWithGoogle).toHaveBeenCalled()
-  //   })
+    await waitFor(() => {
+      expect(mockSignInWithGoogle).toHaveBeenCalled()
+    })
 
-  //   expect(mockPush).toHaveBeenCalledWith('/library')
-  // })
+    expect(mockPush).toHaveBeenCalledWith('/library')
+  })
 
-  // it('displays error message on failure', async () => {
-  //   mockSignIn.mockRejectedValue(new Error('Invalid credentials'))
+  it('displays error message on failure', async () => {
+    mockSignIn.mockRejectedValue(new Error('Invalid credentials'))
 
-  //   renderWithMantine(<LoginPage />)
+    renderWithMantine(<LoginPage />)
 
-  //   fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } })
-  //   fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'wrong' } })
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'wrong' } })
 
-  //   fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
 
-  //   await waitFor(() => {
-  //     expect(screen.getByText('Invalid credentials')).toBeInTheDocument()
-  //   })
-  // })
+    await waitFor(() => {
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument()
+    })
+  })
 })
