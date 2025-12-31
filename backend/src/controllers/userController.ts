@@ -1,7 +1,23 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { User } from '../models/User';
+import { User, type IUser } from '../models/User';
 import { authService } from '../services/authService';
+
+function _constructUserResponse(user: IUser): object {
+  return {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    bio: user.bio,
+    avatarUrl: user.avatarUrl,
+    googleId: user.googleId,
+    googleEmail: user.googleEmail,
+    authProviders: user.authProviders,
+    preferences: user.preferences,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
 
 /**
  * GET /users/me
@@ -29,19 +45,7 @@ export async function getUserProfile(
 
     // Return user profile
     res.status(200).json({
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        bio: user.bio,
-        avatarUrl: user.avatarUrl,
-        googleId: user.googleId,
-        googleEmail: user.googleEmail,
-        authProviders: user.authProviders,
-        preferences: user.preferences,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: _constructUserResponse(user),
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -101,19 +105,7 @@ export async function updateUserProfile(
 
     // Return updated profile
     res.status(200).json({
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        bio: user.bio,
-        avatarUrl: user.avatarUrl,
-        googleId: user.googleId,
-        googleEmail: user.googleEmail,
-        authProviders: user.authProviders,
-        preferences: user.preferences,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: _constructUserResponse(user),
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -253,19 +245,7 @@ export async function linkGoogleAccount(
 
     // Return updated profile
     res.status(200).json({
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        bio: user.bio,
-        avatarUrl: user.avatarUrl,
-        googleId: user.googleId,
-        googleEmail: user.googleEmail,
-        authProviders: user.authProviders,
-        preferences: user.preferences,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: _constructUserResponse(user),
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -362,19 +342,7 @@ export async function unlinkGoogleAccount(
 
     // Return updated profile
     res.status(200).json({
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        bio: user.bio,
-        avatarUrl: user.avatarUrl,
-        googleId: user.googleId,
-        googleEmail: user.googleEmail,
-        authProviders: user.authProviders,
-        preferences: user.preferences,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: _constructUserResponse(user),
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
