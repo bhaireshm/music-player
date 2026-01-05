@@ -1,6 +1,7 @@
 import { useAuth } from '@/hooks/useAuth'
 import { theme1Dark } from "@/lib/theme"
 import { MantineProvider } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LoginPage from './page'
@@ -8,6 +9,11 @@ import LoginPage from './page'
 // Mock the hooks
 jest.mock('@/hooks/useAuth')
 jest.mock('next/navigation')
+jest.mock('@mantine/notifications', () => ({
+  notifications: {
+    show: jest.fn(),
+  },
+}))
 
 const renderWithMantine = (ui: React.ReactNode) => {
   return render(
@@ -88,7 +94,11 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid credentials')).toBeInTheDocument()
+      expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Sign In Failed',
+        message: 'Invalid credentials',
+        color: 'red',
+      }))
     })
   })
 })
