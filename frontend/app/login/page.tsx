@@ -4,17 +4,17 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  Alert,
   Anchor,
   Button,
   Divider,
+  Loader,
   PasswordInput,
   Stack,
   Text,
   TextInput
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -23,7 +23,6 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, signInWithGoogle, loading } = useAuth();
-  const [error, setError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const redirectUrl = searchParams.get('redirect') || '/library';
@@ -40,19 +39,21 @@ function LoginForm() {
   });
 
   const handleSubmit = async (values: typeof form.values) => {
-    setError(null);
-
     try {
       await signIn(values.email, values.password);
       router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
-      setError(errorMessage);
+
+      notifications.show({
+        color: 'red',
+        title: 'Sign In Failed',
+        message: errorMessage,
+      });
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setError(null);
     setGoogleLoading(true);
 
     try {
@@ -60,7 +61,12 @@ function LoginForm() {
       router.push(redirectUrl);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
-      setError(errorMessage);
+
+      notifications.show({
+        color: 'red',
+        title: 'Google Sign In Failed',
+        message: errorMessage,
+      });
     } finally {
       setGoogleLoading(false);
     }
@@ -71,12 +77,6 @@ function LoginForm() {
       title="Welcome Back"
       subtitle="Sign in to your music library"
     >
-      {error && (
-        <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-          {error}
-        </Alert>
-      )}
-
       <GoogleSignInButton
         onClick={handleGoogleSignIn}
         loading={googleLoading}
@@ -85,15 +85,15 @@ function LoginForm() {
 
       <Divider label="OR" labelPosition="center" />
 
-      <form onSubmit={form.onSubmit(handleSubmit)} style={{ pointerEvents: 'auto' }}>
-        <Stack gap="md" style={{ pointerEvents: 'auto' }}>
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack gap="md">
           <TextInput
             label="Email Address"
             placeholder="you@example.com"
             required
             disabled={loading || googleLoading}
             size="md"
-            styles={{ input: { pointerEvents: 'auto', touchAction: 'manipulation' } }}
+            styles={{ input: { touchAction: 'manipulation' } }}
             {...form.getInputProps('email')}
           />
 
@@ -133,7 +133,7 @@ function LoginForm() {
 
 export default function LoginPage(): React.ReactElement {
   return (
-    <Suspense>
+    <Suspense fallback={<Loader />} >
       <LoginForm />
     </Suspense>
   );

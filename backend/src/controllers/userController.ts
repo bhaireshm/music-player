@@ -240,7 +240,6 @@ export async function linkGoogleAccount(
       return;
     }
 
-    // Delegate linking logic to service
     const user = await authService.linkGoogleAccount(userId, googleIdToken);
 
     // Return updated profile

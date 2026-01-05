@@ -1,13 +1,67 @@
 import { getUserProfile } from '@/lib/api';
 import {
-  auth,
-  signIn as firebaseSignIn,
-  signInWithGoogle as firebaseSignInWithGoogle,
-  signOut as firebaseSignOut,
-  signUp as firebaseSignUp
+  firebaseAuth,
+  firebaseSignIn,
+  firebaseSignInWithGoogle,
+  firebaseSignOut,
+  firebaseSignUp
 } from '@/lib/firebase';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { AuthErrorCodes, User, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
+
+/**
+ * Maps Firebase error codes to user-friendly error messages
+ * 
+ * @param {unknown} error - The error object from Firebase
+ * @param {string} defaultMessage - Default message if error code is not recognized
+ * @returns {string} User-friendly error message
+ */
+function getFirebaseErrorMessage(error: unknown, defaultMessage: string): string {
+  const firebaseError = error as { code?: string; message?: string };
+
+  if (!firebaseError.code) {
+    return error instanceof Error ? error.message : defaultMessage;
+  }
+
+  switch (firebaseError.code) {
+    // Sign up errors
+    case AuthErrorCodes.EMAIL_EXISTS:
+      return 'An account with this email already exists. Please sign in instead.';
+    case AuthErrorCodes.WEAK_PASSWORD:
+      return 'Password is too weak. Please use a stronger password.';
+    case AuthErrorCodes.OPERATION_NOT_ALLOWED:
+      return 'Email/password accounts are not enabled. Please contact support.';
+
+    // Sign in errors
+    case AuthErrorCodes.USER_DELETED:
+      return 'No account found with this email. Please sign up first.';
+    case AuthErrorCodes.INVALID_PASSWORD:
+      return 'Incorrect password. Please try again.';
+    case AuthErrorCodes.USER_DISABLED:
+      return 'This account has been disabled.';
+    case AuthErrorCodes.TOO_MANY_ATTEMPTS_TRY_LATER:
+      return 'Too many failed attempts. Please try again later.';
+    case AuthErrorCodes.INVALID_LOGIN_CREDENTIALS:
+      return 'Invalid email or password. Please check your credentials.';
+
+    // Google sign in errors
+    case AuthErrorCodes.POPUP_BLOCKED:
+      return 'Popup blocked. Allow popups and try again.';
+    case AuthErrorCodes.PROVIDER_ALREADY_LINKED:
+      return 'Account exists with different provider. Link accounts.';
+    case AuthErrorCodes.POPUP_CLOSED_BY_USER:
+      return 'Sign-in cancelled.';
+
+    // Common errors
+    case AuthErrorCodes.INVALID_EMAIL:
+      return 'Invalid email address format.';
+    case AuthErrorCodes.NETWORK_REQUEST_FAILED:
+      return 'Network error. Please check your connection and try again.';
+
+    default:
+      return firebaseError.message || defaultMessage;
+  }
+}
 
 interface AuthState {
   user: User | null;
@@ -38,7 +92,7 @@ export function useAuth(): UseAuthReturn {
   // Subscribe to authentication state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
-      auth,
+      firebaseAuth,
       (currentUser) => {
         setUser(currentUser);
         setLoading(false);
@@ -82,31 +136,7 @@ export function useAuth(): UseAuthReturn {
       await firebaseSignUp(email, password);
       await syncUserWithBackend();
     } catch (err: unknown) {
-      let errorMessage = 'Failed to sign up';
-      const error = err as { code?: string; message?: string };
-
-      // Handle Firebase-specific error codes
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = 'An account with this email already exists. Please sign in instead.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Invalid email address format.';
-            break;
-          case 'auth/operation-not-allowed':
-            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-            break;
-          case 'auth/weak-password':
-            errorMessage = 'Password is too weak. Please use a stronger password.';
-            break;
-          default:
-            errorMessage = error.message || 'Failed to sign up';
-        }
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-
+      const errorMessage = getFirebaseErrorMessage(err, 'Failed to sign up');
       console.error('Sign up error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -129,37 +159,7 @@ export function useAuth(): UseAuthReturn {
       await firebaseSignIn(email, password);
       await syncUserWithBackend();
     } catch (err: unknown) {
-      let errorMessage = 'Failed to sign in';
-      const error = err as { code?: string; message?: string };
-
-      // Handle Firebase-specific error codes
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/user-not-found':
-            errorMessage = 'No account found with this email. Please sign up first.';
-            break;
-          case 'auth/wrong-password':
-            errorMessage = 'Incorrect password. Please try again.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Invalid email address format.';
-            break;
-          case 'auth/user-disabled':
-            errorMessage = 'This account has been disabled.';
-            break;
-          case 'auth/too-many-requests':
-            errorMessage = 'Too many failed attempts. Please try again later.';
-            break;
-          case 'auth/invalid-credential':
-            errorMessage = 'Invalid email or password. Please check your credentials.';
-            break;
-          default:
-            errorMessage = error.message || 'Failed to sign in';
-        }
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-
+      const errorMessage = getFirebaseErrorMessage(err, 'Failed to sign in');
       console.error('Sign in error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -178,16 +178,7 @@ export function useAuth(): UseAuthReturn {
       await firebaseSignInWithGoogle();
       await syncUserWithBackend();
     } catch (err: unknown) {
-      let errorMessage = 'Failed to sign in with Google';
-      const error = err as { code?: string; message?: string };
-
-      if (error.code) {
-        // Add Google specific error handling if needed
-        errorMessage = error.message || errorMessage;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-
+      const errorMessage = getFirebaseErrorMessage(err, 'Failed to sign in with Google');
       console.error('Google sign in error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -208,7 +199,8 @@ export function useAuth(): UseAuthReturn {
       await firebaseSignOut();
       // User state will be updated by onAuthStateChanged
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign out';
+      const errorMessage = getFirebaseErrorMessage(err, "Failed to sing out with Google");
+      console.error('Google sign out error:', err);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
