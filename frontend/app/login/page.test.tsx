@@ -3,8 +3,12 @@ import { theme1Dark } from "@/lib/theme"
 import { MantineProvider } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { axe, toHaveNoViolations } from 'jest-axe'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LoginPage from './page'
+
+expect.extend(toHaveNoViolations)
 
 // Mock the hooks
 jest.mock('@/hooks/useAuth')
@@ -25,6 +29,7 @@ describe('LoginPage', () => {
   const mockSignIn = jest.fn()
   const mockSignInWithGoogle = jest.fn()
   const mockPush = jest.fn()
+  const user = userEvent.setup()
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -59,10 +64,10 @@ describe('LoginPage', () => {
   it('handles email/password submission', async () => {
     renderWithMantine(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } })
-    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'password123' } })
+    await user.type(screen.getByLabelText(/email address/i), 'test@example.com')
+    await user.type(screen.getByLabelText(/^password/i), 'password123')
 
-    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }))
 
     await waitFor(() => {
       expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123')
@@ -74,7 +79,7 @@ describe('LoginPage', () => {
   it('handles google sign in', async () => {
     renderWithMantine(<LoginPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: /sign in with google/i }))
+    await user.click(screen.getByRole('button', { name: /sign in with google/i }))
 
     await waitFor(() => {
       expect(mockSignInWithGoogle).toHaveBeenCalled()
@@ -88,10 +93,10 @@ describe('LoginPage', () => {
 
     renderWithMantine(<LoginPage />)
 
-    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'test@example.com' } })
-    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'wrong' } })
+    await user.type(screen.getByLabelText(/email address/i), 'test@example.com')
+    await user.type(screen.getByLabelText(/^password/i), 'wrong')
 
-    fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }))
 
     await waitFor(() => {
       expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({
@@ -100,5 +105,66 @@ describe('LoginPage', () => {
         color: 'red',
       }))
     })
+  })
+
+  it('should have no accessibility violations', async () => {
+    const { container } = renderWithMantine(<LoginPage />)
+    const results = await axe(container)
+    expect(results).toHaveNoViolations()
+  })
+
+  it('redirects to custom redirect URL after successful login', async () => {
+    mockSignIn.mockResolvedValue(undefined)
+
+    // Override search params mock BEFORE render
+    const mockGet = jest.fn().mockImplementation((key) => key === 'redirect' ? '/profile' : null)
+      ; (useSearchParams as jest.Mock).mockReturnValue({
+        get: mockGet,
+      })
+
+    renderWithMantine(<LoginPage />)
+
+    await user.type(screen.getByLabelText(/email address/i), 'test@example.com')
+    await user.type(screen.getByLabelText(/^password/i), 'password123')
+
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }))
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123')
+    })
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/profile')
+    }, { timeout: 3000 })
+  })
+
+  it('shows validation error for invalid email', async () => {
+    const { container } = renderWithMantine(<LoginPage />)
+
+    const emailInput = screen.getByLabelText(/email address/i)
+    await user.type(emailInput, 'invalid-email')
+
+    const form = container.querySelector('form')
+    fireEvent.submit(form!)
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid email')).toBeInTheDocument()
+    })
+    expect(mockSignIn).not.toHaveBeenCalled()
+  })
+
+  it('shows validation error for empty fields', async () => {
+    const { container } = renderWithMantine(<LoginPage />)
+
+    const form = container.querySelector('form')
+    fireEvent.submit(form!)
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid email')).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(screen.getByText('Password is required')).toBeInTheDocument()
+    })
+    expect(mockSignIn).not.toHaveBeenCalled()
   })
 })
