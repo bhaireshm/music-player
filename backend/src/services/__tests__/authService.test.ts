@@ -142,7 +142,7 @@ describe('AuthService', () => {
         expect(mockUser.save).toHaveBeenCalled();
     });
 
-    it('should throw if google email is already in use by another', async () => {
+    it('should throw if google email is already in use by another provider', async () => {
         const userId = 'user-123';
         const googleIdToken = 'google-token';
         
